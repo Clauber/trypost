@@ -17,6 +17,7 @@ use App\Enums\User\WeekStart;
 use App\Models\Traits\HasAccount;
 use App\Models\Traits\HasMedia;
 use App\Models\Traits\HasWorkspace;
+use App\Models\Traits\SyncsStripeCustomer;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
@@ -34,7 +35,7 @@ use Laravel\Passport\HasApiTokens;
 class User extends Authenticatable implements HasLocalePreference, MustVerifyEmail, OAuthenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasAccount, HasApiTokens, HasFactory, HasMedia, HasUuids, HasWorkspace, RoutesNotifications;
+    use HasAccount, HasApiTokens, HasFactory, HasMedia, HasUuids, HasWorkspace, RoutesNotifications, SyncsStripeCustomer;
 
     /**
      * @var list<string>
