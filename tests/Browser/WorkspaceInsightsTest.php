@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\Analytics\PublicationContentType;
 use App\Enums\Analytics\SyncCollector;
 use App\Enums\Analytics\SyncStatus;
 use App\Enums\SocialAccount\Platform;
@@ -12,6 +13,7 @@ use App\Models\AnalyticsAccountDailySnapshot;
 use App\Models\AnalyticsPublication;
 use App\Models\AnalyticsPublicationDailySnapshot;
 use App\Models\AnalyticsSyncState;
+use App\Models\Post;
 use App\Models\SocialAccount;
 use App\Models\User;
 use App\Models\Workspace;
@@ -181,6 +183,17 @@ function workspaceInsightsChartWidthsAroundSidebarToggle(mixed $page): array
             return { before: Math.round(before), during, after: Math.round(chart().getBoundingClientRect().width) };
         })();
     JS);
+}
+
+function workspaceInsightsBrowserUser(): User
+{
+    $user = User::factory()->create();
+    $workspace = Workspace::factory()->create(['user_id' => $user->id, 'account_id' => $user->account_id]);
+    $workspace->members()->attach($user->id, membershipPivot('admin'));
+    $user->update(['current_workspace_id' => $workspace->id]);
+    subscribeAccount($user->account);
+
+    return $user->fresh();
 }
 
 test('workspace dashboard separates accounts and switches follower and post chart modes', function () {
@@ -647,4 +660,72 @@ test('charts keep their width while the sidebar animates and resize once it sett
     expect(array_unique($widths['during']))->toBe([$widths['before']])
         ->and($widths['after'])->toBeGreaterThan($widths['before']);
     $page->assertNoJavaScriptErrors();
+});
+
+test('top posts tag each post type like the channel table', function () {
+    Queue::fake([BootstrapAccountAnalytics::class, CollectAccountDailySnapshot::class]);
+    $user = workspaceInsightsBrowserUser();
+    $workspace = $user->currentWorkspace;
+    $publications = [];
+
+    foreach ([
+        'reel' => [Platform::Instagram, PublicationContentType::Reel],
+        'image' => [Platform::Instagram, PublicationContentType::Image],
+        'tiktok' => [Platform::TikTok, PublicationContentType::Video],
+    ] as $key => [$platform, $contentType]) {
+        $account = SocialAccount::factory()->create(['workspace_id' => $workspace->id, 'platform' => $platform]);
+        $publications[$key] = AnalyticsPublication::factory()->create([
+            'workspace_id' => $workspace->id,
+            'social_account_id' => $account->id,
+            'social_account_key' => $account->id,
+            'platform' => $platform,
+            'network' => $platform->network(),
+            'content_type' => $contentType,
+            'provider_published_at' => now()->subDays(3)->setTime(10, 0),
+        ]);
+        AnalyticsPublicationDailySnapshot::factory()->create(['publication_id' => $publications[$key]->id, 'reactions_count' => 10]);
+    }
+
+    $this->actingAs($user);
+    $page = visit(route('app.insights'));
+    waitForWorkspaceInsightsTestId($page, "analytics-top-post-type-{$publications['reel']->id}");
+
+    $page->assertScript("document.querySelector('[data-testid=\"analytics-top-post-type-{$publications['reel']->id}-icon\"]').classList.contains('tabler-icon-circle-play')", true)
+        ->assertMissing("@analytics-top-post-type-{$publications['image']->id}")
+        ->assertMissing("@analytics-top-post-type-{$publications['tiktok']->id}")
+        ->assertNoJavaScriptErrors();
+});
+
+test('top posts show the post media from our bucket, a video by its cover frame', function () {
+    Queue::fake([BootstrapAccountAnalytics::class, CollectAccountDailySnapshot::class]);
+    $user = workspaceInsightsBrowserUser();
+    $workspace = $user->currentWorkspace;
+    $account = SocialAccount::factory()->create(['workspace_id' => $workspace->id, 'platform' => Platform::Instagram]);
+    $publications = [];
+
+    foreach ([
+        'video' => ['id' => 'video', 'path' => 'medias/reel.mp4', 'url' => 'https://cdn.trypost.test/medias/reel.mp4', 'type' => 'video', 'mime_type' => 'video/mp4'],
+        'image' => ['id' => 'image', 'path' => 'medias/a.jpg', 'url' => 'http://trypost.test/storage/medias/a.jpg', 'type' => 'image', 'mime_type' => 'image/jpeg'],
+    ] as $key => $media) {
+        $post = Post::factory()->forAccount($account)->published()->create(['media' => [$media]]);
+        $publications[$key] = AnalyticsPublication::factory()->create([
+            'workspace_id' => $workspace->id,
+            'social_account_id' => $account->id,
+            'social_account_key' => $account->id,
+            'post_id' => $post->id,
+            'platform' => Platform::Instagram,
+            'network' => Platform::Instagram->network(),
+            'preview_metadata' => ['thumbnail_url' => 'https://scontent.cdninstagram.com/expired.jpg?oe=6ACC450F'],
+            'provider_published_at' => now()->subDays(3)->setTime(10, 0),
+        ]);
+        AnalyticsPublicationDailySnapshot::factory()->create(['publication_id' => $publications[$key]->id, 'reactions_count' => 10]);
+    }
+
+    $this->actingAs($user);
+    $page = visit(route('app.insights'));
+    waitForWorkspaceInsightsTestId($page, "analytics-top-post-video-{$publications['video']->id}");
+
+    $page->assertAttribute("@analytics-top-post-video-{$publications['video']->id}", 'src', 'https://cdn.trypost.test/medias/reel.mp4#t=0.1')
+        ->assertScript("Array.from(document.querySelectorAll('[data-testid=\"analytics-top-post\"] img')).map((image) => image.getAttribute('src')).includes('http://trypost.test/storage/medias/a.jpg')", true)
+        ->assertNoJavaScriptErrors();
 });
