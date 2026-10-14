@@ -208,6 +208,14 @@ Vue components must have a single root element.
 
 - Always use arrow functions in Vue components and TypeScript files. Never use `function` declarations.
 - Template event handlers call a named function (`@click="openCreateDialog"`), never an inline statement that mutates state (`@click="isCreateDialogOpen = true"`). Opening something usually grows a second step later (reset a form, focus, track an event), and a named function is where that goes. Passing an argument through is fine: `@click="openEditDialog(label)"`.
+- **A button that waits on a request shows it through the `Button` component's own `loading` prop whenever possible** (`<Button :loading="form.processing">`): it disables the button and swaps its label for the spinner, so every button waits the same way. Do not hand-roll a `<Spinner v-if>` inside the label or a separate disabled flag for this. When `loading` cannot fit (the label must stay visible next to the spinner, an `as-child` link, a control that is not our `Button`), keep the label and add the spinner next to it. Many existing buttons predate this rule; move them to `loading` when touching them, not in a sweep.
+- **Unsaved changes in the composer** go through `composables/composer/useUnsavedChanges.ts` (the history guard) and `useComposerUnsavedChanges.ts` (what counts as a change). The owner treats this guard as critical. How the guard works is written in the composable's docblock; three rules hold around it:
+    - The composer's save visits (`router.put` / `router.post` in `pages/publish/Index.vue`) send `replace: true`, so the saved page takes the place of the edit's history entry instead of stacking on it.
+    - A composer opened from a page of the app (`lib/inAppHistory.ts`, `cameFromAppPage()`) leaves through history: closing goes back, and saving goes back once the saved page lands and reloads that page. So after a save or close, one browser Back reaches the page before the list, calendar or tab it was opened from. A composer reached by its link or a reload has nothing behind it and still replaces its entry with the list.
+    - "Is there unsaved work" is decided by the snapshot comparison alone, never by `isSubmitting` or another request flag.
+    - Every change to the guard ships with a browser test in `tests/Browser/ComposerUnsavedChangesTest.php` that fails without it, checked by removing the change and running the test. History bugs here showed up only in a real browser (Inertia's own popstate handler is part of every flow).
+- **Composables are scoped by area.** A composable used by one area only lives in that area's folder, `resources/js/composables/<area>/` (e.g. `composables/composer/useComposerUnsavedChanges.ts`, `composables/echo/usePostEcho.ts`). Only composables shared across areas stay at the root of `resources/js/composables/`. When a scoped composable gains a consumer in another area, move it to the root in the same change.
+- Searching a list in the UI goes through `matchesSearch` / `filterBySearch` (`resources/js/lib/search.ts`): word by word, ignoring case and accents. Never hand-roll `.toLowerCase().includes(...)` for a search box.
 
 ## Inertia SSR
 
@@ -238,6 +246,23 @@ Typing the exact name is the stronger guard for the identity-bound ones, on purp
 - Regenerating an API key uses its own keyword, `settings.api_keys.regenerate_modal.keyword` (`REGENERATE`, `REGENERAR`, …), under the same rules.
 - **Exception — disconnecting a channel** (`DisconnectChannelDialog`, user decision October 2026): its keyword, `channels.disconnect_modal.keyword`, is translated and **lowercase** (`disconnect`, `desconectar`, …), shown as the input placeholder and in the copyable keyword line `Type [disconnect ⧉] to confirm.` (same markup as `ConfirmDeleteModal`), and still compared case-sensitively after trimming (`DISCONNECT` must not confirm). The dialog ends its description with a bold `This cannot be undone.` and offers **Refresh connection** before disconnecting. Do not carry either into the other dialogs.
 - **Disconnecting an MCP app** (`settings/workspace/Mcp.vue`, owner decision October 2026) asks for the same `channels.disconnect_modal.keyword`, not the app's name, so the word matches the channel dialog in every locale (compared case-sensitively after trimming). It keeps the plain `ConfirmDeleteModal` without the refresh option or the bold line.
+
+## Writing in-app copy
+
+Text inside the app (popovers, empty states, dialogs, tooltips that ask for an action, errors, toasts) talks to the end user, who is in the middle of doing something. Write it from their side, not from how the system is built. The `copywriting` skill in `.agents/skills` is for marketing pages; it does not apply here.
+
+**Full guide, examples, per-component rules, the review checklist and the sources: the `in-app-copy` skill** (`.claude/skills/in-app-copy/SKILL.md`, mirrored in `.agents/skills` and `.cursor/skills`). Load it before writing or reviewing any user-facing string. The rules below are the minimum.
+
+- **A prompt that asks the user to act follows three steps, in this order** (owner decision October 2026):
+    1. **What is missing, in the user's words and addressed to them:** "You haven't set up this channel's queue yet". Not a system state ("Set up the queue first", "No posting times configured").
+    2. **Why it matters for what they just tried:** "To add posts to the queue, set this channel's posting times." Tie it to the click that opened the prompt, never to how the feature works in general.
+    3. **The next action, named by its button:** the body leads to the button ("Set posting times"), and the button says exactly what happens. Keep a way out ("Not now").
+- **Talk to the user ("you"), lead with the point, keep it short.** One or two sentences. No explanation of the mechanism before the user knows what to do, no apology, no "please", no blame, no generic "This action cannot be undone" line.
+- **A user who cannot do the action** (a member without the permission) gets the same title and a body that names who can do it: "To add posts to the queue, a workspace admin needs to set this channel's posting times." Never show them a button they cannot use.
+- **Errors say what happened and how to fix it**, in the interface's voice: "Couldn't load music from Instagram. Try again." Not "Something went wrong".
+- **Use the words the user already sees on screen.** The same action keeps the same name everywhere (the button "Add to queue", the tab "Queue", the prompt "the queue"). Never introduce internal names (slots, holders, destinations, meta).
+- **Every locale follows the same structure**, written natively, not word for word: keep each locale's existing word for the feature (Fila, Warteschlange, file, cola), and rephrase a sentence that needs grammatical gender for the user into an impersonal one (Polish "Kolejka tego kanału nie jest jeszcze skonfigurowana").
+- Reference: the queue setup popover (`posts.publish.actions.queue_setup`, shown by `AddToQueueButton.vue`).
 
 ## Translated copy must fit its UI slot
 
@@ -430,6 +455,11 @@ There is no connect popup (owner decision 2026-10-06): no `window.open`, no
   `force_login=true` (YouTube, Instagram and TikTok already send theirs on every
   connect). X OAuth 2, LinkedIn, Pinterest, Threads and Discord document none, so
   the step's instructions are the only help there.
+- Google connects (YouTube, Google Business) never send `include_granted_scopes`.
+  TryPost may run every Google feature on one OAuth client, and that flag folds in
+  the scopes the user granted elsewhere (the composer's `drive.file`), which Google
+  refuses to combine with the YouTube scopes ("scopes that cannot be requested
+  together"). Each Google flow asks for its own scopes only.
 
 ## Disconnecting a channel deletes its posts
 
@@ -742,6 +772,16 @@ Never derive the first-use state from the list or from the search box. A paginat
 - **Requests are independent.** Every FormRequest (web under `App/`, API under `Api/`) and every MCP tool declares its own rules inline. Do not create a shared rules helper (e.g. `ChannelRequestRules::reorderQueue()`) for requests or tools to call, and do not make one request delegate its rules to another. Web, API and MCP agreeing is proven by the parity tests in `tests/Feature/Parity`, not by sharing a rules class. Domain rules that already exist as their own concept (`PostPlatformMetaRules`, `PostMediaRules`, `PostStatusRules`, `App\Rules\*` rule objects) stay shared.
     - The classes under `app/Support/Requests/**` predate this rule and will be refactored away; do not add to them or copy their pattern.
 
+## Controllers: one per resource, mirrored on web and API
+
+A controller serves **one resource**. Network-specific endpoints never pile up in a generic controller: in October 2026 `Api\SocialAccountController` had grown to hold Pinterest boards, Discord channels, TikTok creator info, Instagram audio, the posting schedule and the queue slots, and was split (owner decision). Do not let it happen again.
+
+- **One controller per resource**, with resourceful method names (`index`, `show`, `store`, `update`, `destroy`, plus a few named verbs where REST has none, e.g. `generate`, `copy`, `reorder`, `moveToSlot`). A new network feature gets its own controller; it is never added as `pinterestBoards()` / `instagramAudio()` methods on `SocialAccountController` or any other controller.
+- **The web and the API mirror each other.** The same resource has the same controller name on both sides: `App\InstagramAudioController` ↔ `Api\InstagramAudioController`, `App\PinterestBoardController` ↔ `Api\PinterestBoardController`, `App\DiscordController` ↔ `Api\DiscordController`, `App\ChannelPostingScheduleController` ↔ `Api\ChannelPostingScheduleController`. When one side gains an endpoint, the other side's endpoint for the same resource goes in the controller with the same name.
+- **Channel features belong to their channel controller**: posting schedule reads and writes in `ChannelPostingScheduleController`, queue slots and ordering in `ChannelQueueController`, insights in `ChannelInsightsController`. `Api\SocialAccountController` only lists the connected accounts.
+- **MCP has no controllers**: one tool class per action (`app/Mcp/Tools/<Area>/<Verb><Resource>Tool.php`), never one tool that switches on the network.
+- Moving an endpoint between controllers keeps its URL and route name, so API clients see no change; the parity tests in `tests/Feature/Parity` must pass unchanged.
+
 ## Database engines (PostgreSQL + MySQL)
 
 TryPost runs on **both PostgreSQL and MySQL**. Cloud runs PostgreSQL; a self-hosted install may pick either. Every query, migration, and test must work on both — the suite is expected to be green on each.
@@ -803,6 +843,9 @@ an `enabled` flag or posts with several channels. Posts created together share
 - Required-on-publish (meta a platform needs to publish, e.g. Discord `channel_id`) also lives there: `addRequiredOnPublishErrors()` for request-driven flows (web/API update `withValidator`), `assertStoredPostPublishable()` for flows that publish stored state without resubmitting platforms (MCP `PublishPostTool`). Add new required-meta rules to `requiredMetaViolation()`, not inline.
 - When adding a new platform's meta field, add it (and any publish requirement) to `PostPlatformMetaRules` ONLY, and cover it in `tests/Feature/Api/PostApiPlatformMetaTest.php` + `tests/Feature/Mcp/PostPlatformMetaToolTest.php`.
 - `PostPlatformMetaRules::formatViolation()` holds meta no post may store, even as a draft (a YouTube title with `<` or `>`). Every create and update path (web, API, MCP, repurpose) goes through `App\Support\PostCompositionValidator`, which runs it and, once the post is scheduled or published, the content limits below.
+- **What a post stores in `meta` goes through `App\Support\PostMeta::forChannel($account, $meta, $stored)`, on create (`CreateChannelPost`) and on update (`UpdatePost`, passing the post's current meta as `$stored`).** It normalizes the meta, keeps the system keys the post already had (`PostPlatformMetaRules::SYSTEM_KEYS`, today Telegram `reactions`) and has one `match` arm per network that derives something. Never write `posts.meta` from a request without it, and never add a second helper next to it.
+- **A derived value is never taken from the request.** Only the id comes in; the server resolves what it names. The Discord `channel_name` has no validation rule: `PostMeta` drops any sent value and reads the name of `channel_id` from the guild's channel list in the cache (`DiscordClient::cachedChannels()`, warmed by the composer, the API, MCP and publishing). Without a cached list the post stores no name; that is accepted (owner decision October 2026). The composer may keep the name in its local meta for the live preview; the server ignores it.
+- **Saving never calls a network.** `PostMeta` runs inside the post's transaction and the channel queue lock, so a lookup there reads a cache only, never HTTP. A save never fails over a display name.
 
 ## Content limits
 
@@ -840,6 +883,17 @@ an `enabled` flag or posts with several channels. Posts created together share
 - YouTube rejects an upload without a title (`invalidTitle`). A post with neither `meta.title` nor any text cannot be scheduled or published there: `PostPlatformMetaRules::contentMetaViolation()` (through `YouTubeMetadata::missingTitleViolation()`) reports it on `meta.title` in `PostCompositionValidator` (web, API, MCP, repurpose) and `assertStoredPostPublishable()`, and the publisher checks it again. Drafts may lack both.
 - Categories are a fixed list, `App\Enums\YouTube\Category`; the composer reads it from `Platform::publishConfig()` (`categoryOptions`, `defaultCategoryId`). Do not copy it into TypeScript.
 
+## Instagram reels, music, collaborators and tags
+
+What a post can carry on Instagram depends on how the account is connected: through Instagram Login (`Platform::Instagram`) or through a Facebook Page (`Platform::InstagramFacebook`). The rules live in `PostPlatformMetaRules::instagramReelViolation()` (save, schedule and publish) and `InstagramPublisher` (publish); keep the two in step.
+
+- **Music (`meta.audio`)** is for reels on an account connected through Facebook only: Instagram's audio search and `audio_configuration` exist only on that API. The track id is numeric everywhere: the audio routes (`whereNumber('audioId')`), the MCP tools and the `meta.audio.id` rule. A draft may keep music without an id; scheduling or publishing it is refused.
+- **Reel-only options** (`trial_graduation`, `audio`, `share_to_feed`) apply to `ContentType::InstagramReel` only. A feed post with a single video still publishes as `REELS`, but without them (`InstagramPublisher::reelOptions()`). A trial reel cannot have collaborators.
+- **Music on an account that is not connected through Facebook fails the publish visibly** (`ContentPolicy`, `posts.form.instagram.music.requires_facebook`) instead of being dropped. This happens when a card connected through Facebook is reconnected through Instagram Login: its pending posts move to the new platform with their meta untouched. The user removes the music or reconnects through Facebook, then retries. Never strip the music silently, at reconnect or at publish.
+- **Collaborators are not people tags.** Collaborators (`meta.collaborators`, up to 3 usernames, stored without `@` and deduplicated) are co-authors invited on a feed post, carousel or reel, never a story. People tags belong to a media item (`media.*.meta.user_tags`), next to a video's cover frame (`meta.cover_offset_ms`). Both work the same on the web, the API and MCP.
+- **One Instagram identity, two ways to connect it.** An account connected through Instagram Login stores its Instagram account id in `social_accounts.meta.ig_user_id` (asked from `/me` on connect, filled for older accounts by the daily connection check). Comparing identities across the two platforms goes through `SocialAccount::isIdentity()` (and `SocialController::isIdentityOf()`), never a raw `platform_user_id` comparison, so one Instagram account is never seated twice and a card can move between the two connection methods.
+- **The system adds a key to an account's meta without losing what a reconnect saved meanwhile.** `ConnectionVerifier` reads the account again under a row lock, adds `ig_user_id` to that fresh meta and saves it quietly without timestamps, so `updated_at` does not move. Never write the in-memory meta of a model loaded earlier back over the column.
+
 ## Media Types (image / video / document)
 
 - A media item is one of exactly three types: **image**, **video**, **document** (PDF). There is no standalone "audio" media type (audio exists only as a video voiceover input).
@@ -869,6 +923,10 @@ Browser tests live in `tests/Browser` and run on `pestphp/pest-plugin-browser` d
 - **Never `sleep()` in a browser test.** The HTTP server that serves the page runs inside the same PHP process (an Amp loop that only ticks while Pest awaits Playwright), so a blocking `sleep()` starves every asset request: the page stays blank, the Vue app never mounts, and screenshots come out empty. Poll from the page with `$page->script(...)` (as the `waitFor*TestId()` helpers do) — that keeps the loop running.
 - `BrowserTestCase` sets `$fakesVite = false` on purpose: these tests load real built assets, so faking Vite blanks the app.
 - End page assertions with `->assertNoJavaScriptErrors()`.
+- Each `visit()` opens a new browser context: `localStorage`, cookies and history are not shared with the previous visit.
+- The page starts on `about:blank`, so a `back()` with nothing behind it can land there and a test can pass for the wrong reason. A history test starts from an app page (`visit(...)->navigate(...)`) and asserts where it ended with `assertPathIs()`.
+- `assertQueryStringMissing()` checks only the query string: on a route whose id is in the path (`app.posts.edit`) it passes whatever happens. Assert the path instead.
+- A new test for a fix must fail without the fix. Check it by removing the change, running the test, and restoring it.
 - CI runs them in three shards, each in parallel with three processes (`./vendor/bin/pest tests/Browser --compact --parallel --processes=3 --shard=N/3`), leaving a CPU of the 4-vCPU runner to the database and the app server, against `npm run build` output, so keep them independent of a running dev server and of each other. Run them in parallel through `./vendor/bin/pest`, never `php artisan test --parallel`, which does not start the Playwright server. A test that only passes alone has a race: wait for the state you assert (poll the DOM or the database) instead of assuming timing.
 
 ## Array Data Access
@@ -882,6 +940,7 @@ Browser tests live in `tests/Browser` and run on `pestphp/pest-plugin-browser` d
 - EVERY Eloquent model in `app/Models` MUST be registered in `Relation::enforceMorphMap([...])` inside `AppServiceProvider::configureMorphMap()`, keyed by a camelCase alias (e.g. `'postTemplate' => PostTemplate::class`).
 - When you add a new model, add it to the morph map in the same change. `tests/Unit/MorphMapTest.php` fails if any model is missing.
 - The alias is persisted in polymorphic columns, so never rename or remove an existing alias for a model that has stored rows.
+- **Models never make HTTP calls** (owner decision October 2026). A model holds pure rules over its own data (`SocialAccount::isIdentity()`); anything that asks a network lives in a service or an action (`ConnectionVerifier`, `DiscordClient`, the publishers) and writes the result back.
 
 ## Imports
 

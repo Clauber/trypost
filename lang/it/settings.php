@@ -14,7 +14,6 @@ return [
         ],
         'items' => [
             'profile' => 'Profilo',
-            'authentication' => 'Autenticazione',
             'notifications' => 'Notifiche',
             'preferences' => 'Preferenze',
             'general' => 'Generale',
@@ -99,27 +98,23 @@ return [
         'resend_verification' => 'Clicca qui per inviare di nuovo l\'email di verifica.',
         'verification_sent' => 'Un nuovo link di verifica è stato inviato al tuo indirizzo email.',
         'save' => 'Salva',
-    ],
-
-    'authentication' => [
-        'title' => 'Autenticazione',
-        'page_title' => 'Impostazioni di autenticazione',
+        'tabs' => [
+            'profile' => 'Profilo',
+            'login' => 'Password e accesso',
+            'sessions' => 'Sessioni',
+        ],
         'sessions' => [
             'title' => 'Sessioni attive',
             'description' => 'Se noti qualcosa di sospetto, disconnetti gli altri dispositivi.',
             'unknown_browser' => 'Browser sconosciuto',
-            'unknown_ip' => 'IP sconosciuto',
             'on' => 'su',
             'active_now' => 'Attivo ora',
+            'last_activity' => 'Ultima attività :time',
             'log_out_others' => 'Disconnetti gli altri dispositivi',
             'modal_title' => 'Disconnetti gli altri dispositivi',
-            'modal_description_password' => 'Inserisci la tua password attuale per confermare che vuoi disconnettere le altre sessioni del browser.',
-            'modal_description_email' => 'Digita il tuo indirizzo email per confermare che vuoi disconnettere le altre sessioni del browser.',
-            'password_placeholder' => 'Password attuale',
-            'email_placeholder' => 'L\'email del tuo account',
+            'modal_description' => 'Tutti gli altri dispositivi collegati al tuo account verranno disconnessi. Questa sessione resta attiva.',
             'cancel' => 'Annulla',
             'submit' => 'Disconnetti gli altri dispositivi',
-            'email_mismatch' => 'L\'indirizzo email non corrisponde al tuo account.',
             'flash_logged_out' => 'Sei stato disconnesso dagli altri dispositivi.',
         ],
         'password' => [

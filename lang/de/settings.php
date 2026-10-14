@@ -16,7 +16,6 @@ return [
         ],
         'items' => [
             'profile' => 'Profil',
-            'authentication' => 'Authentifizierung',
             'notifications' => 'Benachrichtigungen',
             'preferences' => 'Präferenzen',
             'general' => 'Allgemein',
@@ -101,27 +100,23 @@ return [
         'resend_verification' => 'Klicke hier, um die Bestätigungs-E-Mail erneut zu senden.',
         'verification_sent' => 'Ein neuer Bestätigungslink wurde an deine E-Mail-Adresse gesendet.',
         'save' => 'Speichern',
-    ],
-
-    'authentication' => [
-        'title' => 'Authentifizierung',
-        'page_title' => 'Authentifizierungseinstellungen',
+        'tabs' => [
+            'profile' => 'Profil',
+            'login' => 'Anmeldung',
+            'sessions' => 'Sitzungen',
+        ],
         'sessions' => [
             'title' => 'Aktive Sitzungen',
             'description' => 'Wenn dir etwas Verdächtiges auffällt, melde dich von anderen Geräten ab.',
             'unknown_browser' => 'Unbekannter Browser',
-            'unknown_ip' => 'Unbekannte IP',
             'on' => 'am',
             'active_now' => 'Jetzt aktiv',
+            'last_activity' => 'Letzte Aktivität :time',
             'log_out_others' => 'Andere Geräte abmelden',
             'modal_title' => 'Andere Geräte abmelden',
-            'modal_description_password' => 'Gib dein aktuelles Passwort ein, um zu bestätigen, dass du andere Browser-Sitzungen abmelden möchtest.',
-            'modal_description_email' => 'Gib deine E-Mail-Adresse ein, um zu bestätigen, dass du andere Browser-Sitzungen abmelden möchtest.',
-            'password_placeholder' => 'Aktuelles Passwort',
-            'email_placeholder' => 'E-Mail deines Kontos',
+            'modal_description' => 'Alle anderen Geräte, die bei deinem Konto angemeldet sind, werden abgemeldet. Diese Sitzung bleibt aktiv.',
             'cancel' => 'Abbrechen',
             'submit' => 'Andere Geräte abmelden',
-            'email_mismatch' => 'Die E-Mail-Adresse stimmt nicht mit deinem Konto überein.',
             'flash_logged_out' => 'Du wurdest von anderen Geräten abgemeldet.',
         ],
         'password' => [

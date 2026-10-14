@@ -16,7 +16,6 @@ return [
         ],
         'items' => [
             'profile' => 'Profil',
-            'authentication' => 'Kimlik Doğrulama',
             'notifications' => 'Bildirimler',
             'preferences' => 'Tercihler',
             'general' => 'Genel',
@@ -101,27 +100,23 @@ return [
         'resend_verification' => 'Doğrulama e-postasını yeniden göndermek için buraya tıklayın.',
         'verification_sent' => 'E-posta adresinize yeni bir doğrulama bağlantısı gönderildi.',
         'save' => 'Kaydet',
-    ],
-
-    'authentication' => [
-        'title' => 'Kimlik Doğrulama',
-        'page_title' => 'Kimlik doğrulama ayarları',
+        'tabs' => [
+            'profile' => 'Profil',
+            'login' => 'Şifre ve giriş',
+            'sessions' => 'Oturumlar',
+        ],
         'sessions' => [
             'title' => 'Etkin oturumlar',
             'description' => 'Şüpheli bir şey fark ederseniz diğer cihazlardan çıkış yapın.',
             'unknown_browser' => 'Bilinmeyen tarayıcı',
-            'unknown_ip' => 'Bilinmeyen IP',
             'on' => 'tarih:',
             'active_now' => 'Şu anda etkin',
+            'last_activity' => 'Son etkinlik :time',
             'log_out_others' => 'Diğer cihazlardan çıkış yap',
             'modal_title' => 'Diğer cihazlardan çıkış yap',
-            'modal_description_password' => 'Diğer tarayıcı oturumlarından çıkış yapmak istediğinizi onaylamak için mevcut parolanızı girin.',
-            'modal_description_email' => 'Diğer tarayıcı oturumlarından çıkış yapmak istediğinizi onaylamak için e-posta adresinizi yazın.',
-            'password_placeholder' => 'Mevcut parola',
-            'email_placeholder' => 'Hesap e-postanız',
+            'modal_description' => 'Hesabınızda oturum açık olan diğer tüm cihazlardan çıkış yapılacak. Bu oturum açık kalır.',
             'cancel' => 'İptal',
             'submit' => 'Diğer cihazlardan çıkış yap',
-            'email_mismatch' => 'E-posta adresi hesabınızla eşleşmiyor.',
             'flash_logged_out' => 'Diğer cihazlardan çıkış yapıldı.',
         ],
         'password' => [

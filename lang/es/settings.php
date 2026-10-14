@@ -14,7 +14,6 @@ return [
         ],
         'items' => [
             'profile' => 'Perfil',
-            'authentication' => 'Autenticación',
             'notifications' => 'Notificaciones',
             'preferences' => 'Preferencias',
             'general' => 'General',
@@ -99,27 +98,23 @@ return [
         'resend_verification' => 'Haz clic aquí para reenviar el correo de verificación.',
         'verification_sent' => 'Se ha enviado un nuevo enlace de verificación a tu correo electrónico.',
         'save' => 'Guardar',
-    ],
-
-    'authentication' => [
-        'title' => 'Autenticación',
-        'page_title' => 'Configuración de autenticación',
+        'tabs' => [
+            'profile' => 'Perfil',
+            'login' => 'Contraseña y acceso',
+            'sessions' => 'Sesiones',
+        ],
         'sessions' => [
             'title' => 'Sesiones activas',
             'description' => 'Si notas algo sospechoso, cierra sesión en otros dispositivos.',
             'unknown_browser' => 'Navegador desconocido',
-            'unknown_ip' => 'IP desconocida',
             'on' => 'en',
             'active_now' => 'Activa ahora',
+            'last_activity' => 'Última actividad :time',
             'log_out_others' => 'Cerrar otras sesiones',
             'modal_title' => 'Cerrar otras sesiones',
-            'modal_description_password' => 'Introduce tu contraseña actual para confirmar el cierre de las demás sesiones.',
-            'modal_description_email' => 'Escribe tu correo electrónico para confirmar el cierre de las demás sesiones.',
-            'password_placeholder' => 'Contraseña actual',
-            'email_placeholder' => 'Tu correo',
+            'modal_description' => 'Se cerrará la sesión en todos los demás dispositivos con acceso a tu cuenta. Esta sesión sigue activa.',
             'cancel' => 'Cancelar',
             'submit' => 'Cerrar otras sesiones',
-            'email_mismatch' => 'El correo electrónico no coincide con tu cuenta.',
             'flash_logged_out' => 'Has cerrado sesión en los demás dispositivos.',
         ],
         'password' => [

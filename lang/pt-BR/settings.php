@@ -14,7 +14,6 @@ return [
         ],
         'items' => [
             'profile' => 'Perfil',
-            'authentication' => 'Autenticação',
             'notifications' => 'Notificações',
             'preferences' => 'Preferências',
             'general' => 'Geral',
@@ -99,27 +98,23 @@ return [
         'resend_verification' => 'Clique aqui para reenviar o e-mail de verificação.',
         'verification_sent' => 'Um novo link de verificação foi enviado para seu endereço de e-mail.',
         'save' => 'Salvar',
-    ],
-
-    'authentication' => [
-        'title' => 'Autenticação',
-        'page_title' => 'Configurações de autenticação',
+        'tabs' => [
+            'profile' => 'Perfil',
+            'login' => 'Senha e login',
+            'sessions' => 'Sessões',
+        ],
         'sessions' => [
             'title' => 'Sessões ativas',
             'description' => 'Se você notar algo suspeito, encerre as sessões em outros dispositivos.',
             'unknown_browser' => 'Navegador desconhecido',
-            'unknown_ip' => 'IP desconhecido',
             'on' => 'em',
             'active_now' => 'Ativa agora',
+            'last_activity' => 'Última atividade :time',
             'log_out_others' => 'Encerrar outras sessões',
             'modal_title' => 'Encerrar outras sessões',
-            'modal_description_password' => 'Digite sua senha atual para confirmar o encerramento das outras sessões.',
-            'modal_description_email' => 'Digite seu e-mail para confirmar o encerramento das outras sessões.',
-            'password_placeholder' => 'Senha atual',
-            'email_placeholder' => 'Seu e-mail',
+            'modal_description' => 'Todos os outros dispositivos com acesso à sua conta serão desconectados. Esta sessão continua ativa.',
             'cancel' => 'Cancelar',
             'submit' => 'Encerrar outras sessões',
-            'email_mismatch' => 'O e-mail não corresponde à sua conta.',
             'flash_logged_out' => 'Outras sessões foram encerradas.',
         ],
         'password' => [

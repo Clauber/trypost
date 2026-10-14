@@ -206,6 +206,79 @@ test('a publication with a TryPost post opens the post details on the insights p
         ->assertNoJavaScriptErrors();
 });
 
+test('the post details opened from insights copy the link of the sent post', function () {
+    $post = Post::factory()->forAccount($this->instagram)->published()->create([
+        'user_id' => $this->user->id,
+        'content' => 'Published through TryPost',
+        'published_at' => $this->mostReactions->provider_published_at,
+    ]);
+    $post->forceFill(['platform_url' => 'https://www.instagram.com/p/COPY/'])->save();
+    $this->mostReactions->update(['post_id' => $post->id]);
+
+    $page = visit(route('app.channels.insights', $this->instagram));
+    waitForChannelInsightsTestId($page, "insights-posts-link-{$this->mostReactions->id}");
+    $page->click("@insights-posts-link-{$this->mostReactions->id}");
+    waitForChannelInsightsTestId($page, "post-card-menu-details-{$post->id}");
+
+    $page->script('window.__copied = null; navigator.clipboard.writeText = async (text) => { window.__copied = text; };');
+    $page->click("@post-card-menu-details-{$post->id}");
+    waitForChannelInsightsTestId($page, "post-copy-link-details-{$post->id}");
+    $page->click("@post-copy-link-details-{$post->id}");
+    $page->script(<<<'JS'
+        (async () => {
+            for (let i = 0; i < 100 && window.__copied === null; i++) {
+                await new Promise((r) => setTimeout(r, 50));
+            }
+        })();
+    JS);
+
+    expect($page->script('window.__copied'))->toBe('https://www.instagram.com/p/COPY/');
+    $page->assertNoJavaScriptErrors();
+});
+
+test('the post details opened from insights share the link of the sent post in a new post', function () {
+    $post = Post::factory()->forAccount($this->instagram)->published()->create([
+        'user_id' => $this->user->id,
+        'content' => 'Published through TryPost',
+        'published_at' => $this->mostReactions->provider_published_at,
+    ]);
+    $post->forceFill(['platform_url' => 'https://www.instagram.com/p/SHARE/'])->save();
+    $this->mostReactions->update(['post_id' => $post->id]);
+
+    $page = visit(route('app.channels.insights', $this->instagram));
+    waitForChannelInsightsTestId($page, "insights-posts-link-{$this->mostReactions->id}");
+    $page->click("@insights-posts-link-{$this->mostReactions->id}");
+    waitForChannelInsightsTestId($page, "post-card-menu-details-{$post->id}");
+    $page->click("@post-card-menu-details-{$post->id}");
+    waitForChannelInsightsTestId($page, "post-share-link-details-{$post->id}");
+    $page->click("@post-share-link-details-{$post->id}");
+    waitForChannelInsightsTestId($page, 'post-composer-dialog');
+
+    $page->assertSeeIn('@post-composer-dialog', 'https://www.instagram.com/p/SHARE/')
+        ->assertNoJavaScriptErrors();
+});
+
+test('the post details of a sent post without a link offer no share or copy link', function () {
+    $post = Post::factory()->forAccount($this->instagram)->published()->create([
+        'user_id' => $this->user->id,
+        'content' => 'Published through TryPost',
+        'published_at' => $this->mostReactions->provider_published_at,
+    ]);
+    $post->forceFill(['platform_url' => null])->save();
+    $this->mostReactions->update(['post_id' => $post->id]);
+
+    $page = visit(route('app.channels.insights', $this->instagram));
+    waitForChannelInsightsTestId($page, "insights-posts-link-{$this->mostReactions->id}");
+    $page->click("@insights-posts-link-{$this->mostReactions->id}");
+    waitForChannelInsightsTestId($page, "post-card-menu-details-{$post->id}");
+    $page->click("@post-card-menu-details-{$post->id}");
+    waitForChannelInsightsTestId($page, "post-card-menu-content-details-{$post->id}");
+
+    $page->assertMissing("@post-share-link-details-{$post->id}")
+        ->assertMissing("@post-copy-link-details-{$post->id}")
+        ->assertNoJavaScriptErrors();
+});
+
 test('on a phone the channel insights range presets collapse into a dropdown', function () {
     $page = visit(route('app.channels.insights', ['account' => $this->instagram]))->resize(390, 844);
     waitForChannelInsightsTestId($page, 'insights-range-mobile-trigger');
