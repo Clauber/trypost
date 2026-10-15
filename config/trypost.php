@@ -66,6 +66,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | ChatGPT MCP egress ranges
+    |--------------------------------------------------------------------------
+    |
+    | ChatGPT calls the MCP server from the ranges OpenAI publishes
+    | (https://developers.openai.com/api/docs/guides/ip-addresses). From
+    | there, a request without a token may list the tools, and a tool call
+    | is answered with the sign-in prompt ChatGPT shows in the conversation.
+    | Every other client keeps the plain 401.
+    |
+    */
+
+    'mcp_chatgpt_ip_ranges_url' => env('MCP_CHATGPT_IP_RANGES_URL', 'https://openai.com/chatgpt-connectors.json'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Meta page walk budget
     |--------------------------------------------------------------------------
     |
