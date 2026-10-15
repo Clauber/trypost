@@ -6,6 +6,8 @@ use App\Enums\Analytics\ExportFormat;
 use App\Http\Controllers\App\ApiKeyController;
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\CanvaController;
+use App\Http\Controllers\App\ChangelogEntryReactionController;
+use App\Http\Controllers\App\ChangelogEntryViewController;
 use App\Http\Controllers\App\ChannelController;
 use App\Http\Controllers\App\ChannelPostingScheduleController;
 use App\Http\Controllers\App\ChannelQueueController;
@@ -104,6 +106,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('referral-source', [ReferralSourceController::class, 'store'])
         ->middleware('throttle:6,1')
         ->name('app.referral-source.store');
+    Route::post('changelog/{changelogEntry}/views', [ChangelogEntryViewController::class, 'store'])
+        ->middleware('throttle:60,1')
+        ->name('app.changelog.views.store');
+    Route::put('changelog/{changelogEntry}/reaction', [ChangelogEntryReactionController::class, 'update'])
+        ->middleware('throttle:60,1')
+        ->name('app.changelog.reaction.update');
     Route::get('welcome/subscription-required', [WelcomeController::class, 'subscriptionRequired'])->name('app.welcome.subscription-required');
     Route::get('billing/processing', [BillingController::class, 'processing'])->name('app.billing.processing');
 

@@ -750,7 +750,73 @@ view turns a forgotten variable into a runtime-only failure.
 - The page size ALWAYS comes from `config('app.pagination.default')` — never a magic number, and never a `perPage`/`per_page` value supplied by the request or frontend. Action/service list methods must NOT accept a `$perPage` parameter; call `->paginate((int) config('app.pagination.default'))` directly.
     - **Exception — the per-post table on the channel insights page** (owner decision 2026-10-05): it is page-based with numbered pages, 10 posts per page (`ListChannelPublicationPerformance::INSIGHTS_PAGE_SIZE`, through `insightsPage()`), and keeps `?page=` in the URL; a sort, period or filter change goes back to page 1. The API endpoint and the MCP tool for the same list keep the config page size through `handle()`.
     - **Exception — the ideas board columns** (owner decision 2026-10-06): each stage column (and Unassigned) is its own scroll prop, `columns.<stage id|unassigned>`, with its own page name, and loads 10 ideas per page (`ListIdeas::BOARD_PAGE_SIZE`) as the column scrolls. A label filter change resets every column to page 1. Column counts come from the database (`stages.*.ideas_count`, `unassigned_count`), never from the loaded cards. The web board moves a card with `after_idea_id` (`MoveIdea::after()`), since a partly loaded column cannot send the full order; the API and MCP keep the full `idea_ids` contract. The gallery keeps the config page size.
+    - **Exception — the "What's New" modal** (owner decision 2026-10-14): it loads 5 entries per page, enough to fill the modal (capped at 640px) and the next one loads only when the user scrolls (`ListChangelogEntries::PAGE_SIZE`) under the page name `changelog_page`, as the shared optional scroll prop `changelogEntries` (built with the `changelog` card prop by `BuildChangelogProps`, which `HandleInertiaRequests` only spreads), requested by a partial reload when the modal opens.
     - **This includes the public REST API** (`app/Http/Controllers/Api`). It used to pin its own page size of 15 as a stable contract; that exception is gone, so a list endpoint reads the same config as everything else. Changing `app.pagination.default` therefore changes the API's page size too — deliberate, and the reason a list response always carries `meta.per_page` for clients to read rather than assume.
+
+## Changelog ("What's New")
+
+The in-app announcements: a card at the bottom of the sidebar announcing the newest
+entry, and a "What's New" modal (Help menu) listing every published entry.
+
+- **Each entry is one folder in the repo**, `resources/changelog/<YYYY-MM-DD>-<slug>/` with
+  `entry.md` (front matter `title`, `date`, optional `tags` from `App\Enums\Changelog\Tag`: `new`, `improved`, `fixed`, `beta`, shown above the title with a fixed color each in `ChangelogTagBadge.vue`)
+  and `cover.png` (16:9, rendered at 2400×1350). Covers come from three numbered templates in `.claude/release-assets/changelog-covers/`, rendered by its `render.mjs`: 1 settings panel (a composer-like panel with the network's badge on a tint with corner dots, white surfaces with a 2.5px ink border), 2 integration (a tile grid with the TryPost mark, a plus and the service's official logo from `logos/`) and 3 announcement (the same grid with 🎁 📣 🎉). An entry only swaps the content; the style only, never another product's sample content, never screenshots or headlines. The folder holds a `.gitkeep` so it exists with no entries.
+  There is no admin panel. Write them with the `/changelog` command.
+- **Covers are Vite assets** (owner decision 2026-10-14): `vite.config.ts` lists
+  `resources/changelog/**/*.png` in the plugin's `assets`, so the build versions them, and
+  `ChangelogEntry::coverUrl()` reads `Vite::asset()`. A cover missing from the build gives a null
+  `cover_url` (not reported) and the UI keeps the empty muted frame; factories hit this, production
+  does not because the build and the sync run from the same commit. Never upload covers to a disk
+  or put them in `public/`.
+- **`php artisan changelog:sync` runs on every deploy** (after `migrate`). Each folder is validated against
+  `App\Http\Requests\App\Changelog\SyncChangelogEntryRequest` (rules and messages live there, like
+  every other request); `SyncChangelogEntries` reads the files, validates and writes. DTOs never validate. It upserts
+  `changelog_entries` by slug, deletes rows whose folder is gone, and fails loud without writing
+  anything when the folder itself is missing (never "no entries, delete everything") or one folder is invalid (its name must be `<YYYY-MM-DD>-<slug>` and its `date` that same day, which also catches an impossible unquoted date YAML would roll over) (missing `entry.md` or `cover.png`, or a cover that is not
+  16:9). Never edit the rows by hand, and never rename a synced folder (its views are keyed to
+  the row).
+- **The entries and the modal are English only** (owner decision 2026-10-14): the entries, the
+  tag labels (`Tag::label()`), the modal title, its empty state, the "Do you like it?" block (its
+  `Like` / `Dislike` labels and its error toast), the card's "Read more" and the entry's "All updates" button are hard-coded English,
+  never lang keys. The exception is the Help menu item, which is part
+  of the app menu and is translated (`sidebar.support.changelog`, all 16 locales). The close
+  button's `aria-label` reuses `common.close`. An open entry's header drops the "What's New"
+  title for an "← All updates" button (English, like the rest) and the X; the dialog's title
+  for screen readers is then the entry's title (`sr-only`).
+- **"Viewed" means the user opened the entry's detail**, never that it was shown in the
+  card or the list. `changelog_entry_views` holds one row per user and entry, and
+  `ChangelogEntryViewObserver` queues `TrackChangelogEntryEvent` (`posthog` queue) when the row
+  is created, so `changelog.entry_viewed` goes to PostHog on the first open only.
+- **"Do you like it?"** sits at the end of an entry's detail with 👍 / 👎
+  (`App\Enums\Changelog\Reaction`: `like`, `dislike`), shown as emoji that grow on hover; once
+  one is picked, the other turns grayscale. The answer is the `reaction` column on the
+  user's view row (owner decision 2026-10-14: no separate reactions table); clicking the chosen
+  one again clears it. `ReactToChangelogEntry` (`PUT app.changelog.reaction.update`) records the
+  view if needed and stores the reaction; the observer queues `TrackChangelogEntryEvent` with
+  `changelog.entry_reacted` on every change, carrying the reaction picked (null when cleared). Counts are never shown in the app.
+- **PostHog events go through queued jobs**, like the rest of the app: actions never call
+  `PostHogService::capture()`; the observer dispatches `app/Jobs/PostHog` jobs on the `posthog` queue.
+- **The sidebar card announces one entry only** (owner decision 2026-10-14): the newest
+  one dated since the user's signup day (`ChangelogEntry::scopeAnnouncedTo`), and only
+  while the user has not opened it (`ShowChangelogCard::execute`). Opening it hides
+  the card; older unopened entries never take its place. A new user never gets the backlog.
+  The card is cached per user for 10 minutes (`ShowChangelogCard::cached()`), so a page change
+  does not query it. The cache holds the entry's raw attributes, never the model:
+  `cache.serializable_classes` is off, so a cached object comes back as `__PHP_Incomplete_Class`.
+  The action owns its keys (private, like `ListPinterestBoards`). `RecordChangelogEntryView`
+  clears one user's card when it creates a view, and a sync that changed anything bumps the cards'
+  version (`ShowChangelogCard::forgetAll()`), so a new, removed or re-dated entry shows at once.
+- **The modal closes when the page changes** (`useChangelogDialog` closes on every Inertia
+  `navigate`, which fires for pushed visits and browser Back/Forward); its own requests (list load,
+  scroll pages, card reload) are same-URL visits Inertia replaces without `navigate`, so they leave
+  it open. Layouts are not persistent, so keeping it open across pages would remount it
+  with stale state.
+- **The modal list shows every published entry** (`scopePublished`, dated today or earlier),
+  including those from before the user signed up, with a dot on the ones not opened yet. A
+  future date schedules an entry for both.
+- On by default (`CHANGELOG_ENABLED`, `trypost.changelog.enabled`), self-hosted included: the
+  Docker entrypoint runs `changelog:sync` after `migrate`. Turning it off means no shared data, no
+  card, no menu item, and the view and reaction routes 404.
 
 ## Empty states on list pages
 

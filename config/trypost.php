@@ -18,6 +18,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Changelog ("What's New")
+    |--------------------------------------------------------------------------
+    |
+    | Shows the sidebar card and the "What's New" modal fed by the entries
+    | under resources/changelog/, synced with `php artisan changelog:sync`
+    | on every deploy. On by default, self-hosted included.
+    |
+    */
+
+    'changelog' => [
+        'enabled' => (bool) env('CHANGELOG_ENABLED', true),
+        'path' => resource_path('changelog'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Legal pages
     |--------------------------------------------------------------------------
     |
