@@ -222,8 +222,10 @@ const refreshSelectedAudio = async (): Promise<boolean> => {
         updateMeta({
             audio: {
                 ...current,
-                cover_url: fresh.cover_url,
-                preview_url: fresh.preview_url,
+                title: current.title || fresh.title,
+                artist: current.artist || fresh.artist,
+                cover_url: fresh.cover_url || current.cover_url,
+                preview_url: fresh.preview_url || current.preview_url,
             },
         });
 
@@ -232,6 +234,19 @@ const refreshSelectedAudio = async (): Promise<boolean> => {
         return false;
     }
 };
+
+const isMissingTrackDetails = (audio: InstagramAudio | null): boolean =>
+    Boolean(audio?.id && (!audio.title || !audio.cover_url || !audio.preview_url));
+
+watch(
+    isReel,
+    (reel) => {
+        if (reel && isMissingTrackDetails(selectedAudio.value)) {
+            void refreshSelectedAudio();
+        }
+    },
+    { immediate: true },
+);
 
 const onSelectedLinkBroken = (url: string | null | undefined): void => {
     void refreshSelectedAudio().then((refreshed) => {

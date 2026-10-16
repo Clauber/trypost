@@ -562,3 +562,93 @@ function waitForWebFonts(mixed $page): void
         })();
     JS);
 }
+
+/**
+ * Wait until a JavaScript expression is true in the page, for up to 15
+ * seconds. Assertions do not wait for the SPA to paint, and a blocking
+ * sleep() would starve the server that serves the page, so the page polls.
+ */
+function waitForCondition(mixed $page, string $condition): void
+{
+    $page->script(<<<JS
+        (async () => {
+            for (let i = 0; i < 300; i++) {
+                if ({$condition}) return;
+                await new Promise((resolve) => setTimeout(resolve, 50));
+            }
+        })();
+    JS);
+}
+
+/**
+ * The selector as a JavaScript string, with `@name` standing for
+ * `[data-testid="name"]` as in `$page->click('@name')`, anywhere in it:
+ * `@channel-settings-rows [role="combobox"]`.
+ */
+function jsSelector(string $selector): string
+{
+    return json_encode(preg_replace('/@([\w-]+)/', '[data-testid="$1"]', $selector));
+}
+
+/**
+ * Wait until an element matching the selector exists and the expression,
+ * written about `element`, is true: "element.getAttribute('aria-checked') === 'true'".
+ */
+function waitForState(mixed $page, string $selector, string $expression): void
+{
+    $selector = jsSelector($selector);
+
+    waitForCondition($page, "((element) => element && ({$expression}))(document.querySelector({$selector}))");
+}
+
+/**
+ * Wait until an element matching the selector is mounted and laid out.
+ */
+function waitFor(mixed $page, string $selector): void
+{
+    waitForState($page, $selector, 'element.getBoundingClientRect().height > 0');
+}
+
+/**
+ * Wait until no element matches the selector.
+ */
+function waitForGone(mixed $page, string $selector): void
+{
+    $selector = jsSelector($selector);
+
+    waitForCondition($page, "!document.querySelector({$selector})");
+}
+
+/**
+ * Wait until any element matching the selector contains the text.
+ */
+function waitForText(mixed $page, string $selector, string $text): void
+{
+    $selector = jsSelector($selector);
+    $text = json_encode($text);
+
+    waitForCondition($page, "[...document.querySelectorAll({$selector})].some((element) => element.textContent.includes({$text}))");
+}
+
+/**
+ * Wait until one element is gone or another is shown, whichever happens
+ * first, so the assertion after it fails at once on the other outcome
+ * instead of waiting out the timeout.
+ */
+function waitForGoneOrShown(mixed $page, string $gone, string $shown): void
+{
+    $gone = jsSelector($gone);
+    $shown = jsSelector($shown);
+
+    waitForCondition($page, "!document.querySelector({$gone}) || document.querySelector({$shown})");
+}
+
+/**
+ * Wait until the page is at this path.
+ */
+function waitForPath(mixed $page, string $path): void
+{
+    $path = json_encode($path);
+
+    waitForCondition($page, "location.pathname === {$path}");
+}
