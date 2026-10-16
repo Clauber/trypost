@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Actions\Mcp\ListChatGptEgressRanges;
 use App\Listeners\StripeEventListener;
 use App\Models\AccessToken;
 use App\Models\Account;
@@ -69,6 +70,7 @@ use SocialiteProviders\LinkedIn\LinkedInExtendSocialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 use SocialiteProviders\Pinterest\PinterestExtendSocialite;
 use SocialiteProviders\TikTok\TikTokExtendSocialite;
+use Symfony\Component\HttpFoundation\IpUtils;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -168,8 +170,11 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for(
-            'mcp-oauth-registration',
-            fn (Request $request): Limit => Limit::perMinute(30)->by($request->ip()),
+            'mcp-oauth',
+            fn (Request $request): Limit => $request->isMethodCacheable()
+                || IpUtils::checkIp((string) $request->ip(), [...ListChatGptEgressRanges::execute(), ...config()->array('trypost.mcp_claude_ip_ranges')])
+                    ? Limit::none()
+                    : Limit::perMinute(30)->by($request->ip()),
         );
 
         RateLimiter::for(
