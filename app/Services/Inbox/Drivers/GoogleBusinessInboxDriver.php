@@ -195,11 +195,6 @@ class GoogleBusinessInboxDriver implements InboxDriver
             return null;
         }
 
-        if (blank(data_get($review, 'reviewReply.comment'))) {
-            $reply->forceFill(['review_reply_state' => null])->save();
-            RemoveInboxMessages::execute($account, [(string) $reply->platform_message_id]);
-        }
-
         return $review;
     }
 

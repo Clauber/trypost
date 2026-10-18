@@ -185,7 +185,7 @@ test('a deleted review does not fail the poll and leaves the inbox', function ()
         ->and(InboxMessage::query()->whereKey($gone->root_id)->value('removed_at'))->not->toBeNull();
 });
 
-test('a pending reply Google no longer has stops being pending', function () {
+test('a pending reply Google does not show yet stays pending, never removed', function () {
     $reply = pendingGoogleReply($this->account, 'r1');
     Http::fake([
         "{$this->api}/{$this->location}/reviews/r1" => Http::response(googleReview('r1', '2026-10-01T10:00:00Z')),
@@ -194,8 +194,8 @@ test('a pending reply Google no longer has stops being pending', function () {
 
     app(GoogleBusinessInboxDriver::class)->poll($this->account, ConversationKind::Review, '2026-10-12T00:00:00Z', $this->since);
 
-    expect($reply->fresh()->review_reply_state)->toBeNull()
-        ->and($reply->fresh()->removed_at)->not->toBeNull();
+    expect($reply->fresh()->review_reply_state)->toBe(ReviewReplyState::Pending)
+        ->and($reply->fresh()->removed_at)->toBeNull();
 });
 
 test('pending replies are rechecked oldest first so none waits forever', function () {
