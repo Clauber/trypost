@@ -188,6 +188,9 @@ return [
         'connect_description' => 'Responde los comentarios de todos tus canales en un solo lugar.',
         'how_title' => 'Cómo funciona',
         'how_description' => 'Al conectar un canal, traemos los comentarios de sus últimos :days días. Después, los nuevos aparecen a medida que llegan.',
+        'reviews_title' => 'Estamos atentos a las reseñas nuevas',
+        'reviews_description' => 'Te avisamos cuando alguien deje una reseña de tu negocio en Google.',
+        'reviews_how_description' => 'Al conectar un Perfil de Empresa, traemos las reseñas de sus últimos :days días. Después, las nuevas aparecen a medida que llegan.',
     ],
     'hint' => [
         'title' => 'Reordena tus posts',

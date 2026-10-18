@@ -188,6 +188,9 @@ return [
         'connect_description' => 'Rispondi ai commenti di tutti i canali in un unico posto.',
         'how_title' => 'Come funziona',
         'how_description' => 'Quando colleghi un canale, importiamo i commenti degli ultimi :days giorni. Poi i nuovi arrivano man mano che vengono scritti.',
+        'reviews_title' => 'Siamo in ascolto di nuove recensioni',
+        'reviews_description' => 'Ti avvisiamo quando qualcuno recensisce la tua attività su Google.',
+        'reviews_how_description' => 'Quando colleghi un Profilo dell\'attività, importiamo le recensioni degli ultimi :days giorni. Poi le nuove arrivano man mano che vengono scritte.',
     ],
     'hint' => [
         'title' => 'Riordina i tuoi post',

@@ -188,6 +188,9 @@ return [
         'connect_description' => 'すべてのチャンネルのコメントに1か所で返信できます。',
         'how_title' => '仕組み',
         'how_description' => 'チャンネルを接続すると、過去:days日分のコメントを取り込みます。その後は新しいコメントが届きしだい表示されます。',
+        'reviews_title' => '新しいレビューを待っています',
+        'reviews_description' => 'Google でビジネスにレビューが投稿されたらお知らせします。',
+        'reviews_how_description' => 'ビジネス プロフィールを接続すると、過去:days日分のレビューを取り込みます。その後は新しいレビューが届きしだい表示されます。',
     ],
     'hint' => [
         'title' => '投稿を並べ替える',

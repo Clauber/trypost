@@ -188,6 +188,9 @@ return [
         'connect_description' => 'Odpowiadaj na komentarze ze wszystkich kanałów w jednym miejscu.',
         'how_title' => 'Jak to działa',
         'how_description' => 'Po połączeniu kanału pobieramy komentarze z ostatnich :days dni. Potem nowe pojawiają się na bieżąco.',
+        'reviews_title' => 'Czekamy na nowe opinie',
+        'reviews_description' => 'Damy znać, gdy ktoś wystawi opinię Twojej firmie w Google.',
+        'reviews_how_description' => 'Po połączeniu Profilu Firmy pobieramy opinie z ostatnich :days dni. Potem nowe pojawiają się na bieżąco.',
     ],
     'hint' => [
         'title' => 'Zmień kolejność postów',

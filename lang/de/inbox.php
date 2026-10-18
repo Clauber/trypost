@@ -188,6 +188,9 @@ return [
         'connect_description' => 'Beantworte die Kommentare aller Kanäle an einem Ort.',
         'how_title' => "So funktioniert's",
         'how_description' => 'Beim Verbinden eines Kanals holen wir die Kommentare der letzten :days Tage. Danach erscheinen neue Kommentare, sobald sie geschrieben werden.',
+        'reviews_title' => 'Wir warten auf neue Bewertungen',
+        'reviews_description' => 'Wir sagen dir Bescheid, sobald jemand dein Unternehmen bei Google bewertet.',
+        'reviews_how_description' => 'Beim Verbinden eines Unternehmensprofils holen wir die Bewertungen der letzten :days Tage. Danach erscheinen neue, sobald sie geschrieben werden.',
     ],
     'hint' => [
         'title' => 'Posts neu sortieren',

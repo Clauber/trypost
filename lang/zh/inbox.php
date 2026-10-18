@@ -188,6 +188,9 @@ return [
         'connect_description' => '在一个地方回复所有频道的评论。',
         'how_title' => '工作方式',
         'how_description' => '连接频道时，我们会导入最近 :days 天的评论。之后，新评论一发布就会显示。',
+        'reviews_title' => '我们正在关注新评价',
+        'reviews_description' => '有人在 Google 上评价你的商家时，我们会通知你。',
+        'reviews_how_description' => '连接商家资料时，我们会导入最近 :days 天的评价。之后，新评价一发布就会显示。',
     ],
     'hint' => [
         'title' => '重新排列帖子',

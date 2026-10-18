@@ -188,6 +188,9 @@ return [
         'connect_description' => 'Answer the comments from every channel in one place.',
         'how_title' => 'How it works',
         'how_description' => 'When you connect a channel, we bring in the comments from its last :days days. After that, new comments show up as people post them.',
+        'reviews_title' => 'We\'re listening for new reviews',
+        'reviews_description' => 'We\'ll let you know when someone reviews your business on Google.',
+        'reviews_how_description' => 'When you connect a Business Profile, we bring in the reviews from its last :days days. After that, new reviews show up as people post them.',
     ],
     'hint' => [
         'title' => 'Reorder your posts',

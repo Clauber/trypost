@@ -188,6 +188,9 @@ return [
         'connect_description' => 'Beantwoord de opmerkingen van al je kanalen op één plek.',
         'how_title' => 'Zo werkt het',
         'how_description' => 'Bij het koppelen van een kanaal halen we de opmerkingen van de laatste :days dagen op. Daarna verschijnen nieuwe zodra ze geplaatst worden.',
+        'reviews_title' => 'We letten op nieuwe reviews',
+        'reviews_description' => 'We laten het je weten als iemand je bedrijf op Google beoordeelt.',
+        'reviews_how_description' => 'Bij het koppelen van een bedrijfsprofiel halen we de reviews van de laatste :days dagen op. Daarna verschijnen nieuwe zodra ze geplaatst worden.',
     ],
     'hint' => [
         'title' => 'Je posts herschikken',

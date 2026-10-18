@@ -188,6 +188,9 @@ return [
         'connect_description' => 'Réponds aux commentaires de tous tes canaux au même endroit.',
         'how_title' => 'Comment ça marche',
         'how_description' => "À la connexion d'un canal, on récupère les commentaires des :days derniers jours. Ensuite, les nouveaux arrivent au fil de l'eau.",
+        'reviews_title' => 'On guette les nouveaux avis',
+        'reviews_description' => 'On vous prévient dès que quelqu\'un laisse un avis sur votre établissement dans Google.',
+        'reviews_how_description' => 'À la connexion d\'une fiche d\'établissement, on récupère les avis des :days derniers jours. Ensuite, les nouveaux arrivent au fil de l\'eau.',
     ],
     'hint' => [
         'title' => 'Réordonne tes posts',

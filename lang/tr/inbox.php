@@ -188,6 +188,9 @@ return [
         'connect_description' => 'Tüm kanallarındaki yorumları tek yerden yanıtla.',
         'how_title' => 'Nasıl çalışır',
         'how_description' => 'Bir kanal bağladığında son :days günün yorumlarını getiririz. Sonrasında yeni yorumlar yazıldıkça görünür.',
+        'reviews_title' => 'Yeni değerlendirmeleri takip ediyoruz',
+        'reviews_description' => 'Biri Google\'da işletmeni değerlendirdiğinde sana haber veririz.',
+        'reviews_how_description' => 'Bir İşletme Profili bağladığında son :days günün değerlendirmelerini getiririz. Sonrasında yenileri yazıldıkça görünür.',
     ],
     'hint' => [
         'title' => 'Gönderilerini yeniden sırala',

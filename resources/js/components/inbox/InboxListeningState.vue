@@ -18,13 +18,33 @@ const props = withDefaults(
     { mentions: false, messages: false },
 );
 
-/** The copy of the tab the state stands for: comments, mentions or messages. */
+/**
+ * Comments on channels that only have reviews (Google Business Profile):
+ * nothing there is posted to get people talking, so the state speaks of reviews.
+ */
+const isReviewsOnly = computed(
+    () =>
+        !props.mentions &&
+        !props.messages &&
+        props.channels.length > 0 &&
+        props.channels.every((channel) => channel.kinds.includes('review') && !channel.kinds.includes('comment')),
+);
+
+/** The copy of the tab the state stands for: comments, reviews, mentions or messages. */
 const copyKeys = computed(() => {
     if (props.messages) {
         return {
             title: 'inbox.direct.listening_title',
             description: 'inbox.direct.listening_description',
             how: 'inbox.direct.how_description',
+        };
+    }
+
+    if (isReviewsOnly.value) {
+        return {
+            title: 'inbox.listening.reviews_title',
+            description: 'inbox.listening.reviews_description',
+            how: 'inbox.listening.reviews_how_description',
         };
     }
 
@@ -109,6 +129,7 @@ const connectMoreChannels = (): void => {
         </p>
         <div class="mt-3 flex w-full flex-col gap-3 text-start">
             <button
+                v-if="!isReviewsOnly"
                 type="button"
                 class="flex w-full gap-2 rounded-lg border border-border bg-card p-4 text-start transition-control hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
                 data-testid="inbox-listening-post"

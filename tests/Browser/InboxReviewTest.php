@@ -175,3 +175,15 @@ test('a workspace with a comment channel keeps the view toggle and comment wordi
     waitFor($page, '@inbox-view-list');
     $page->assertVisible('@inbox-view-post')->assertVisible('@inbox-view-list')->assertNoJavaScriptErrors();
 });
+
+test('a reviews-only channel with nothing yet speaks of reviews and offers no post to write', function () {
+    $empty = SocialAccount::factory()->googleBusiness()->withInboxScopes()->create(['workspace_id' => $this->location->workspace_id, 'username' => 'Second Cafe']);
+
+    $page = visit(route('app.channels.inbox', $empty));
+
+    waitForText($page, '@inbox-listening', __('inbox.listening.reviews_title'));
+    $page->assertSeeIn('@inbox-listening', __('inbox.listening.reviews_description'))
+        ->assertMissing('@inbox-listening-post')
+        ->assertVisible('@inbox-listening-connect')
+        ->assertNoJavaScriptErrors();
+});

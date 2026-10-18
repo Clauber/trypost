@@ -188,6 +188,9 @@ return [
         'connect_description' => '모든 채널의 댓글에 한곳에서 답하세요.',
         'how_title' => '작동 방식',
         'how_description' => '채널을 연결하면 최근 :days일 동안의 댓글을 가져와요. 그다음부터는 새 댓글이 달리는 대로 표시돼요.',
+        'reviews_title' => '새 리뷰를 기다리고 있어요',
+        'reviews_description' => '누군가 Google에서 비즈니스에 리뷰를 남기면 알려 드려요.',
+        'reviews_how_description' => '비즈니스 프로필을 연결하면 최근 :days일 동안의 리뷰를 가져와요. 그다음부터는 새 리뷰가 달리는 대로 표시돼요.',
     ],
     'hint' => [
         'title' => '게시물 순서 바꾸기',
