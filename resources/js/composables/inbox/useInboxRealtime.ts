@@ -56,7 +56,7 @@ const REORDER_KEYS: Record<InboxView, string> = {
 };
 
 /**
- * Real-time inbox updates, Buffer style: what changed on the open post or
+ * Real-time inbox updates: what changed on the open post or
  * conversation, or on a List card already loaded, is read again in place; what
  * arrived anywhere else only refreshes the counts and flags the reorder button
  * or the "new" pill, so no list moves under the user or drops the pages they
