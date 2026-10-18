@@ -70,7 +70,7 @@ const metrics = computed(() =>
                         r="16"
                         fill="none"
                         stroke-width="2.5"
-                        :class="hasScore ? 'stroke-primary-subtle' : 'stroke-muted'"
+                        :class="hasScore ? 'stroke-primary-subtle' : 'stroke-border-strong'"
                     />
                     <circle
                         v-if="hasScore"

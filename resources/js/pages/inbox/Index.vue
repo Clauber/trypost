@@ -436,7 +436,7 @@ const toggleAllPosts = (): void => {
                         v-if="commentScore"
                         :score="commentScore"
                         :channels="inboxChannels"
-                        :channel-ids="filters.channels"
+                        :channel-ids="filters.channel ? [filters.channel] : filters.channels"
                     />
                 </Deferred>
             </div>

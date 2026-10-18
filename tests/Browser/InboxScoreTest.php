@@ -57,18 +57,18 @@ test('the comment score badge opens its breakdown inside the viewport', function
         ->assertNoJavaScriptErrors();
 })->with(['desktop' => 1280, 'mobile' => 390]);
 
-test('the popover names the channel picked in the filter', function () {
+test('the popover names the channel picked in the filter or whose own inbox this is', function (string $route) {
     seedScoredComments($this->conversation);
     $account = $this->conversation->socialAccount;
 
-    $page = visit(route('app.inbox.index', ['channels' => [$account->id]]));
+    $page = visit($route === 'filter' ? route('app.inbox.index', ['channels' => [$account->id]]) : route('app.channels.inbox', $account));
 
     waitForText($page, '@inbox-score-badge-value', '85');
     $page->click('@inbox-score-badge');
     waitForState($page, '@inbox-score-popover', inViewport());
     $page->assertSeeIn('@inbox-score-title', __('inbox.score.title_channel', ['channel' => $account->display_name ?: $account->username]))
         ->assertNoJavaScriptErrors();
-});
+})->with(['filter', 'channel page']);
 
 test('without comments this week the badge has no score and the popover says why', function () {
     InboxMessage::factory()->for($this->conversation, 'conversation')->create(['platform_created_at' => now()->subDays(10)]);
