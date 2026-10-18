@@ -19,7 +19,6 @@ import type { InboxPostConversation } from '@/types/inbox';
 const props = defineProps<{
     conversations: InboxPostConversation[];
     selected: InboxPostConversation | null;
-    grid: boolean;
     hasNewElsewhere: boolean;
     reordering: boolean;
     allPosts: boolean;
@@ -207,7 +206,7 @@ defineExpose({ loadMore });
             >
                 <ul
                     id="inbox-post-items"
-                    :class="grid ? 'grid grid-cols-3 gap-2' : 'flex flex-col gap-2'"
+                    class="flex flex-col gap-2"
                 >
                     <li
                         v-for="conversation in conversations"
@@ -216,7 +215,6 @@ defineExpose({ loadMore });
                         <InboxPostCard
                             :conversation="conversation"
                             :selected="isSameInboxItem(conversation, selected)"
-                            :grid="grid"
                             @select="selectConversation"
                         />
                     </li>

@@ -261,6 +261,11 @@ Route::middleware(['auth', EnsureAccountReady::class, EnsureHasWorkspace::class]
         ->whereIn('format', ExportFormat::values())
         ->name('app.channels.insights.download');
     Route::get('channels/{account}/settings', [ChannelController::class, 'settings'])->name('app.channels.settings');
+    Route::get('channels/{account}/inbox', [InboxConversationController::class, 'index'])->name('app.channels.inbox');
+    Route::get('channels/{account}/inbox/list', [InboxMessageController::class, 'index'])->name('app.channels.inbox.messages');
+    Route::get('channels/{account}/inbox/conversations/{conversation}', [InboxConversationController::class, 'showInChannel'])
+        ->whereUuid('conversation')
+        ->name('app.channels.inbox.conversations');
     Route::put('channels/{account}/posting-schedule', [ChannelPostingScheduleController::class, 'update'])->name('app.channels.posting-schedule.update');
     Route::post('channels/{account}/posting-schedule/copy', [ChannelPostingScheduleController::class, 'copy'])->name('app.channels.posting-schedule.copy');
     Route::put('channels/{account}/queue/order', [ChannelQueueController::class, 'reorder'])->name('app.channels.queue.order');

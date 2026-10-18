@@ -1,27 +1,44 @@
 <script setup lang="ts">
-import { IconCheck, IconPhoto } from '@tabler/icons-vue';
+import { IconCheck } from '@tabler/icons-vue';
 import { computed } from 'vue';
 
 import PlatformLogo from '@/components/PlatformLogo.vue';
 import { inboxItemKey } from '@/lib/inbox';
+import { isImage, isVideo } from '@/lib/mediaType';
+import { videoFrameUrl } from '@/lib/videoFrame';
 import type { InboxPostConversation } from '@/types/inbox';
 
 const props = defineProps<{
     conversation: InboxPostConversation;
     selected: boolean;
-    grid?: boolean;
 }>();
 
 const emit = defineEmits<{
     select: [conversation: InboxPostConversation];
 }>();
 
-const media = computed(() => props.conversation.subject.media ?? []);
+const postMedia = computed(() =>
+    (props.conversation.post?.media ?? []).filter((item) => isImage(item) || isVideo(item)),
+);
+
+/** The post's own media, as the open post shows it; the stored subject for a post not linked yet. */
+const media = computed(() => (postMedia.value.length > 0 ? postMedia.value : (props.conversation.subject.media ?? [])));
 
 const thumbnail = computed(() => {
     const first = media.value[0];
 
-    return first ? (first.thumbnail_url ?? first.url) : null;
+    if (!first) {
+        return null;
+    }
+
+    return 'thumbnail_url' in first && first.thumbnail_url ? first.thumbnail_url : isVideo(first) ? null : first.url;
+});
+
+/** A video with no still: its first frame stands in, as on the open post. */
+const videoFrame = computed(() => {
+    const first = media.value[0];
+
+    return first && !thumbnail.value && isVideo(first) ? videoFrameUrl(first) : null;
 });
 
 const extraMedia = computed(() => Math.max(media.value.length - 1, 0));
@@ -58,13 +75,6 @@ const answeredShare = computed(() => {
     );
 });
 
-const GRID_LABEL_LENGTH = 80;
-
-/** A grid card shows only the picture, so its name is the post's text (or the channel). */
-const gridName = computed(() =>
-    (props.conversation.subject.text || props.conversation.channel.username || '').slice(0, GRID_LABEL_LENGTH),
-);
-
 const selectCard = (): void => {
     emit('select', props.conversation);
 };
@@ -72,40 +82,6 @@ const selectCard = (): void => {
 
 <template>
     <button
-        v-if="grid"
-        type="button"
-        class="relative aspect-square w-full overflow-hidden rounded-lg border bg-muted transition-control focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
-        :class="selected ? 'border-primary-text' : 'border-border hover:border-border-strong'"
-        :aria-current="selected ? 'true' : undefined"
-        :aria-label="[gridName, $t(statusLabel.key, statusLabel.replacements)].filter(Boolean).join(', ')"
-        :data-testid="testId"
-        @click="selectCard"
-    >
-        <img
-            v-if="thumbnail"
-            :src="thumbnail"
-            alt=""
-            class="size-full object-cover"
-            :class="isAnswered ? 'opacity-60' : ''"
-            loading="lazy"
-        />
-        <IconPhoto
-            v-else
-            class="absolute inset-0 m-auto size-5 text-muted-foreground"
-            aria-hidden="true"
-        />
-        <span
-            v-if="!hasNoComments"
-            aria-hidden="true"
-            class="absolute end-1 bottom-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-card px-1 text-xs font-medium text-foreground tabular-nums"
-        >
-            <IconCheck v-if="isAnswered" class="size-3" />
-            <template v-else>{{ conversation.open_count }}</template>
-        </span>
-    </button>
-
-    <button
-        v-else
         type="button"
         class="flex w-full flex-col gap-2 rounded-lg border bg-card px-3 py-2 text-start transition-control focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
         :class="
@@ -147,15 +123,26 @@ const selectCard = (): void => {
                 >
             </span>
             <span
-                v-if="thumbnail"
+                v-if="thumbnail || videoFrame"
                 class="relative size-12 shrink-0 overflow-hidden rounded bg-muted"
             >
                 <img
+                    v-if="thumbnail"
                     :src="thumbnail"
                     alt=""
                     class="size-full object-cover"
                     :class="isAnswered ? 'opacity-60' : ''"
                     loading="lazy"
+                />
+                <video
+                    v-else-if="videoFrame"
+                    :src="videoFrame"
+                    class="size-full object-cover"
+                    :class="isAnswered ? 'opacity-60' : ''"
+                    muted
+                    playsinline
+                    preload="metadata"
+                    data-testid="inbox-post-card-video-frame"
                 />
                 <span
                     v-if="extraMedia > 0"

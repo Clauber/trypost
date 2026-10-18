@@ -2,6 +2,11 @@ import { router, usePage } from '@inertiajs/vue3';
 import { toRaw } from 'vue';
 
 import { isVideo } from '@/lib/mediaType';
+import { inbox as channelInboxIndex } from '@/routes/app/channels';
+import {
+    conversations as channelInboxConversation,
+    messages as channelInboxMessages,
+} from '@/routes/app/channels/inbox';
 import { index as inboxIndex } from '@/routes/app/inbox';
 import { show as showConversation } from '@/routes/app/inbox/conversations';
 import { index as inboxMessagesIndex } from '@/routes/app/inbox/messages';
@@ -261,20 +266,30 @@ const filtersForView = (view: InboxView, filters: InboxFilters): InboxFilters =>
     posts: showsAllPosts(view, filters) && (filters.posts === 'all' || lastPosts === 'all') ? 'all' : 'commented',
 });
 
+/** By post's page, under the channel on a channel's own inbox. */
+const postViewUrl = (filters: InboxFilters, query: Record<string, string | string[]> = {}): string =>
+    filters.channel ? channelInboxIndex.url(filters.channel, { query }) : inboxIndex.url({ query });
+
+/** The List view's page, under the channel on a channel's own inbox. */
+const listViewUrl = (filters: InboxFilters, query: Record<string, string | string[]> = {}): string =>
+    filters.channel ? channelInboxMessages.url(filters.channel, { query }) : inboxMessagesIndex.url({ query });
+
 export const inboxViewUrl = (view: InboxView, filters: InboxFilters): string =>
     showsPostView(view, filters)
-        ? inboxIndex.url({ query: inboxQuery(filtersForView(view, filters)) })
-        : inboxMessagesIndex.url({ query: inboxQuery(filtersForView(view, filters)) });
+        ? postViewUrl(filters, inboxQuery(filtersForView(view, filters)))
+        : listViewUrl(filters, inboxQuery(filtersForView(view, filters)));
 
 export const conversationUrl = (
     conversationId: string,
     filters: InboxFilters,
 ): string =>
-    showConversation.url(conversationId, { query: inboxQuery(filters) });
+    filters.channel
+        ? channelInboxConversation.url({ account: filters.channel, conversation: conversationId }, { query: inboxQuery(filters) })
+        : showConversation.url(conversationId, { query: inboxQuery(filters) });
 
 /** A post nobody commented on yet has no conversation, so By post opens it by its post. */
 export const inboxPostUrl = (postId: string, filters: InboxFilters): string =>
-    inboxIndex.url({ query: { ...inboxQuery(filters), post: postId } });
+    postViewUrl(filters, { ...inboxQuery(filters), post: postId });
 
 /** The same post card or conversation, even when one side has no conversation yet. */
 export const isSameInboxItem = (
@@ -303,7 +318,7 @@ export const applyInboxFilters = (
     const applied = showsAllPosts(view, filters) ? filters : { ...filters, posts: 'commented' as const };
 
     router.get(
-        showsPostView(view, filters) ? inboxIndex.url() : inboxMessagesIndex.url(),
+        showsPostView(view, filters) ? postViewUrl(filters) : listViewUrl(filters),
         inboxQuery(applied),
         {
             preserveState: true,
@@ -415,12 +430,6 @@ export const threadOf = (message: InboxMessage): InboxThread =>
 
 export const isInbound = (message: InboxMessage): boolean =>
     message.direction === 'inbound';
-
-export const VISUAL_PLATFORMS: string[] = [
-    Platform.Instagram,
-    Platform.InstagramFacebook,
-    Platform.YouTube,
-];
 
 export const DATE_RANGE_KEYS: Record<InboxDateRange, string> = {
     '7d': 'last_7_days',

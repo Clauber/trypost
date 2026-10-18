@@ -14,6 +14,7 @@ final readonly class InboxFilters
 {
     /**
      * @param  list<string>  $channelIds  the channels to keep; empty means every channel
+     * @param  string|null  $scopedChannelId  the channel whose own inbox page this is (channels/{account}/inbox)
      */
     public function __construct(
         public array $channelIds,
@@ -22,7 +23,14 @@ final readonly class InboxFilters
         public DateRange $range,
         public InboxTab $tab = InboxTab::DEFAULT,
         public PostsFilter $posts = PostsFilter::DEFAULT,
+        public ?string $scopedChannelId = null,
     ) {}
+
+    /** The same filters on one channel's own inbox page, where the URL holds the channel. */
+    public function forChannel(string $channelId): self
+    {
+        return new self([$channelId], $this->status, $this->sort, $this->range, $this->tab, $this->posts, $channelId);
+    }
 
     /**
      * "Show all posts" lists the posts of the Comments tab, including those

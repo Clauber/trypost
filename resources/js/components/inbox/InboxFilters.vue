@@ -300,6 +300,7 @@ const openTabSheet = (): void => {
             class="flex min-w-0 items-center gap-1 max-md:shrink-0 md:gap-3"
         >
             <PostChannelFilter
+                v-if="!filters.channel"
                 v-model="selectedChannelIds"
                 :channels="channelOptions"
                 test-id="inbox-channel"

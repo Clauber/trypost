@@ -37,7 +37,6 @@ import {
     rememberCommentsView,
     rememberedPosts,
     syncErrorInTab,
-    VISUAL_PLATFORMS,
 } from '@/lib/inbox';
 import { store as dismissReorderHint } from '@/routes/app/inbox/reorder-hint';
 import type {
@@ -102,8 +101,6 @@ const channelsInScope = (channelIds: string[]): InboxChannel[] =>
     channelIds.length
         ? props.inboxChannels.filter((channel) => channelIds.includes(channel.id))
         : props.inboxChannels;
-
-const scopedChannels = computed(() => channelsInScope(props.filters.channels));
 
 const channelsWithoutAccess = computed(() =>
     props.inboxChannels.filter(
@@ -171,11 +168,6 @@ const conversationChannel = computed(
         ) ?? null,
 );
 
-const showsGrid = computed(
-    () =>
-        scopedChannels.value.length > 0 &&
-        scopedChannels.value.every((channel) => VISUAL_PLATFORMS.includes(channel.platform)),
-);
 
 /** The newest direct message loaded, which an open conversation's card previews. */
 const newestDirectMessage = computed(() =>
@@ -279,7 +271,7 @@ const isReviewOnly = (channelIds: string[]): boolean => {
 const selectedPlatform = computed((): string | null => {
     const platforms = new Set(
         props.inboxChannels
-            .filter((channel) => props.filters.channels.includes(channel.id))
+            .filter((channel) => (props.filters.channel ? [props.filters.channel] : props.filters.channels).includes(channel.id))
             .map((channel) => channel.platform),
     );
 
@@ -585,7 +577,6 @@ const toggleAllPosts = (): void => {
                     :class="isPostsPanelOpen ? '' : 'max-md:hidden'"
                     :conversations="conversationList"
                     :selected="conversation"
-                    :grid="showsGrid"
                     :has-new-elsewhere="hasNewElsewhere"
                     :reordering="isReordering"
                     :all-posts="filters.posts === 'all'"

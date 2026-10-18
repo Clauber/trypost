@@ -188,6 +188,8 @@ export interface InboxFilterChannel {
 
 export interface InboxFilters {
     channels: string[];
+    /** The channel whose own inbox page this is (channels/{id}/inbox); the URL holds it, not the channel filter. */
+    channel?: string | null;
     status: InboxStatusFilter;
     sort: InboxSort;
     range: InboxDateRange;

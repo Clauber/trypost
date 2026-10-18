@@ -12,6 +12,7 @@ use App\Enums\Inbox\ConversationKind;
 use App\Enums\Inbox\InboxTab;
 use App\Enums\Inbox\StatusFilter;
 use App\Enums\SocialAccount\Platform;
+use App\Http\Controllers\App\Concerns\ScopesInboxToChannel;
 use App\Http\Requests\App\Inbox\IndexInboxRequest;
 use App\Models\InboxConversation;
 use App\Models\SocialAccount;
@@ -25,21 +26,23 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class InboxConversationController extends Controller
 {
-    public function index(IndexInboxRequest $request): Response|RedirectResponse
+    use ScopesInboxToChannel;
+
+    public function index(IndexInboxRequest $request, ?SocialAccount $account = null): Response|RedirectResponse
     {
         abort_unless(Platform::inboxModuleEnabled(), HttpResponse::HTTP_NOT_FOUND);
 
         $workspace = $request->user()->currentWorkspace;
         $this->authorize('createPost', $workspace);
 
-        $filters = InboxFilters::fromArray($request->validated());
+        $filters = $this->scopedFilters($request, InboxFilters::fromArray($request->validated()), $account);
 
-        if ($filters->tab === InboxTab::Messages && ! BuildInboxPageProps::directMessagesOn($workspace)) {
-            return redirect()->route('app.inbox.index', Arr::except($request->query(), ['tab', 'thread_conversation', BuildInboxPageProps::DIRECT_MESSAGES_PAGE_NAME]));
+        if ($filters->tab === InboxTab::Messages && ! BuildInboxPageProps::directMessagesOn($workspace, $filters)) {
+            return $this->inboxRedirect('app.inbox.index', Arr::except($request->query(), ['tab', 'thread_conversation', BuildInboxPageProps::DIRECT_MESSAGES_PAGE_NAME]), $account);
         }
 
         if ($filters->tab === InboxTab::Mentions || ($filters->tab === InboxTab::Comments && $this->isReviewOnly($workspace, $filters->channelIds))) {
-            return redirect()->route('app.inbox.messages.index', Arr::except($request->query(), ['thread_conversation', 'thread_around', ListConversationThreads::PAGE_NAME]));
+            return $this->inboxRedirect('app.inbox.messages.index', Arr::except($request->query(), ['thread_conversation', 'thread_around', ListConversationThreads::PAGE_NAME]), $account);
         }
 
         return Inertia::render('inbox/Index', BuildInboxPageProps::execute(
@@ -54,6 +57,19 @@ class InboxConversationController extends Controller
     }
 
     public function show(IndexInboxRequest $request, InboxConversation $conversation): Response|RedirectResponse
+    {
+        return $this->renderConversation($request, $conversation, null);
+    }
+
+    /**
+     * A conversation on its channel's own inbox (channels/{account}/inbox/conversations/{conversation}).
+     */
+    public function showInChannel(IndexInboxRequest $request, SocialAccount $account, InboxConversation $conversation): Response|RedirectResponse
+    {
+        return $this->renderConversation($request, $conversation, $account);
+    }
+
+    private function renderConversation(IndexInboxRequest $request, InboxConversation $conversation, ?SocialAccount $account): Response|RedirectResponse
     {
         abort_unless(Platform::inboxModuleEnabled(), HttpResponse::HTTP_NOT_FOUND);
 
@@ -71,23 +87,25 @@ class InboxConversationController extends Controller
             return redirect()->to($request->fullUrl());
         }
 
+        abort_if($account && $conversation->social_account_id !== $account->id, HttpResponse::HTTP_NOT_FOUND);
+
         if ($conversation->kind === ConversationKind::Review) {
-            return redirect()->route('app.inbox.messages.index', [
+            return $this->inboxRedirect('app.inbox.messages.index', [
                 'channels' => [$conversation->social_account_id],
                 'status' => StatusFilter::All->value,
-            ]);
+            ], $account);
         }
 
         if ($conversation->kind === ConversationKind::Mention) {
-            return redirect()->route('app.inbox.messages.index', [
+            return $this->inboxRedirect('app.inbox.messages.index', [
                 'tab' => InboxTab::Mentions->value,
                 'channels' => [$conversation->social_account_id],
                 'status' => StatusFilter::All->value,
-            ]);
+            ], $account);
         }
 
         $workspace = $user->currentWorkspace;
-        $filters = InboxFilters::fromArray([...$request->validated(), 'tab' => InboxTab::forKind($conversation->kind)->value]);
+        $filters = $this->scopedFilters($request, InboxFilters::fromArray([...$request->validated(), 'tab' => InboxTab::forKind($conversation->kind)->value]), $account);
 
         return Inertia::render('inbox/Index', BuildInboxPageProps::execute(
             $user,

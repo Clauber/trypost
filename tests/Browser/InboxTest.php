@@ -833,3 +833,24 @@ test('a comment that arrives while the post is open shows on top after a reload'
     $page->assertScript("document.querySelector('#inbox-conversation-items [data-thread-id]').dataset.threadId", $arrived->id)
         ->assertNoJavaScriptErrors();
 });
+
+test('a channel opens its own inbox from the sidebar, with its open count, and stays there', function () {
+    $other = InboxConversation::factory()->create(['workspace_id' => $this->conversation->workspace_id, 'social_account_id' => SocialAccount::factory()->bluesky()->create(['workspace_id' => $this->conversation->workspace_id])->id, 'subject_text' => 'Another channel post']);
+    InboxMessage::factory()->for($other, 'conversation')->create(['body' => 'Elsewhere']);
+    RecountInboxConversation::execute($other);
+    $channel = $this->conversation->socialAccount;
+
+    $page = visit(route('app.channels.publish', $channel));
+
+    waitForText($page, "@sidebar-channel-{$channel->id}-inbox-count", '1');
+    $page->click("@sidebar-channel-{$channel->id}-inbox");
+    waitForPath($page, parse_url(route('app.channels.inbox', $channel), PHP_URL_PATH));
+    waitFor($page, "@inbox-post-card-{$this->conversation->id}");
+    $page->assertMissing("@inbox-post-card-{$other->id}")
+        ->assertMissing('@inbox-channel-filter')
+        ->assertAttribute("@sidebar-channel-{$channel->id}-inbox", 'data-active', 'true');
+
+    $page->click('@inbox-view-list');
+    waitForPath($page, parse_url(route('app.channels.inbox.messages', $channel), PHP_URL_PATH));
+    $page->assertSee('Love it')->assertDontSee('Elsewhere')->assertNoJavaScriptErrors();
+});

@@ -69,7 +69,8 @@ class BuildInboxPageProps
         return [
             'view' => $view,
             'filters' => [
-                'channels' => $filters->channelIds,
+                'channels' => $filters->scopedChannelId ? [] : $filters->channelIds,
+                'channel' => $filters->scopedChannelId,
                 'status' => $filters->status->value,
                 'sort' => $filters->sort->value,
                 'range' => $filters->range->value,
@@ -121,15 +122,18 @@ class BuildInboxPageProps
             'repliedRecentlyCount' => $listsConversations || $isMentions ? null : fn (): int => self::repliedRecentlyCount($workspace, $filters->channelIds),
             'tabCounts' => fn (): array => [
                 'comments' => CountOpenInboxMessages::execute($workspace, InboxTab::Comments, $filters->channelIds, $filters->range)['total'],
-                'mentions' => self::mentionsOn() ? CountOpenInboxMessages::execute($workspace, InboxTab::Mentions, $filters->channelIds, $filters->range)['total'] : null,
-                'messages' => self::directMessagesOn($workspace) ? CountOpenInboxMessages::execute($workspace, InboxTab::Messages, $filters->channelIds, $filters->range)['total'] : null,
+                'mentions' => self::mentionsOn() && self::scopeHas($filters, ConversationKind::Mention) ? CountOpenInboxMessages::execute($workspace, InboxTab::Mentions, $filters->channelIds, $filters->range)['total'] : null,
+                'messages' => self::directMessagesOn($workspace, $filters) ? CountOpenInboxMessages::execute($workspace, InboxTab::Messages, $filters->channelIds, $filters->range)['total'] : null,
             ],
             'commentScore' => Inertia::defer(fn (): array => InboxScoreResource::make(CalculateInboxScore::cached($workspace, $user, $filters->channelIds))->resolve()),
             'mentionsAvailability' => fn (): array => self::mentionsAvailability(),
-            'inboxChannels' => fn (): array => self::channels($workspace, $filters->tab, $filters->range),
+            'inboxChannels' => fn (): array => self::channels($workspace, $filters->tab, $filters->range, $filters->scopedChannelId),
             'filterChannels' => fn (): array => self::filterChannels($workspace),
             'hasInboxChannels' => fn (): bool => $workspace->socialAccounts()->whereIn('platform', Platform::inboxValues())->exists(),
-            'hasConversations' => fn (): bool => InboxConversation::query()->visibleInTab($workspace, $filters->tab)->exists(),
+            'hasConversations' => fn (): bool => InboxConversation::query()
+                ->visibleInTab($workspace, $filters->tab)
+                ->when($filters->scopedChannelId, fn (Builder $query, string $channelId) => $query->where('social_account_id', $channelId))
+                ->exists(),
             'showsReorderHint' => blank($user->inbox_reorder_hint_seen_at),
             'backfillDays' => (int) config('trypost.inbox.backfill_days'),
             'canReply' => $canReply,
@@ -155,11 +159,28 @@ class BuildInboxPageProps
      * The Messages tab shows once a channel of the workspace can have direct
      * messages: its driver reads them.
      */
-    public static function directMessagesOn(Workspace $workspace): bool
+    public static function directMessagesOn(Workspace $workspace, ?InboxFilters $filters = null): bool
     {
         $platforms = array_values(array_filter(Platform::inboxValues(), fn (string $value): bool => Platform::from($value)->inboxKindEnabled(ConversationKind::DirectMessage)));
 
-        return $platforms !== [] && $workspace->socialAccounts()->whereIn('platform', $platforms)->exists();
+        return $platforms !== []
+            && $workspace->socialAccounts()->whereIn('platform', $platforms)->exists()
+            && ($filters === null || self::scopeHas($filters, ConversationKind::DirectMessage));
+    }
+
+    /**
+     * Whether the page's channel syncs a kind: a channel's own inbox shows
+     * only the tabs its channel has. The workspace inbox has every tab.
+     */
+    private static function scopeHas(InboxFilters $filters, ConversationKind $kind): bool
+    {
+        if (blank($filters->scopedChannelId)) {
+            return true;
+        }
+
+        $account = SocialAccount::query()->find($filters->scopedChannelId);
+
+        return $account !== null && in_array($kind, app(InboxDrivers::class)->kindsFor($account), true);
     }
 
     private static function mentionsOn(): bool
@@ -246,13 +267,14 @@ class BuildInboxPageProps
     /**
      * @return list<array<string, mixed>>
      */
-    private static function channels(Workspace $workspace, InboxTab $tab, DateRange $range): array
+    private static function channels(Workspace $workspace, InboxTab $tab, DateRange $range, ?string $scopedChannelId = null): array
     {
         $counts = CountOpenInboxMessages::execute($workspace, $tab, range: $range)['channels'];
         $drivers = app(InboxDrivers::class);
 
         return $workspace->socialAccounts()
             ->whereIn('platform', Platform::inboxValues())
+            ->when($scopedChannelId, fn (Builder $query, string $channelId) => $query->whereKey($channelId))
             ->with('inboxSyncStates')
             ->get()
             ->map(fn (SocialAccount $account): array => [

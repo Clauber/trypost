@@ -207,7 +207,7 @@ test('a link a network sent that is not http(s) is never rendered', function () 
         ->assertNoJavaScriptErrors();
 });
 
-test('a picture-only post card is named by its text and progress', function () {
+test('an instagram-only filter keeps full post cards that show their text', function () {
     $account = SocialAccount::factory()->instagram()->create([
         'workspace_id' => $this->conversation->workspace_id,
         'username' => 'brand',
@@ -224,8 +224,8 @@ test('a picture-only post card is named by its text and progress', function () {
 
     $page = visit(route('app.inbox.index', ['channels' => [$account->id]]));
 
-    waitFor($page, "@inbox-post-card-{$post->id}");
-    $page->assertAttributeContains("@inbox-post-card-{$post->id}", 'aria-label', 'Sunset reel')->assertNoJavaScriptErrors();
+    waitForText($page, "@inbox-post-card-{$post->id}", 'Sunset reel');
+    $page->assertSeeIn("@inbox-post-card-{$post->id}", 'Sunset reel')->assertNoJavaScriptErrors();
 });
 
 test('news from another tab only refreshes the counts, never the new pill', function () {

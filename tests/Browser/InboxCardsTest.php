@@ -9,6 +9,7 @@ use App\Jobs\Inbox\SendInboxReply;
 use App\Models\InboxConversation;
 use App\Models\InboxMessage;
 use App\Models\Post;
+use App\Models\SocialAccount;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
 
@@ -245,4 +246,23 @@ test('a comment the channel hid on the network shows the hidden icon with what i
     $page->hover('@inbox-message-hidden');
     waitForText($page, '[role="tooltip"]', __('inbox.comment.hidden', ['network' => $this->conversation->socialAccount->platform->label()]));
     $page->assertNoJavaScriptErrors();
+});
+
+test('an instagram channel lists its posts as full cards, and a video without a still shows its first frame', function () {
+    $instagram = SocialAccount::factory()->instagramFacebook()->withInboxScopes()->create(['workspace_id' => $this->conversation->workspace_id]);
+    $post = Post::factory()->forAccount($instagram)->published()->create([
+        'content' => 'Reel caption',
+        'media' => [['id' => 'v1', 'url' => 'https://cdn.example.test/reel.mp4', 'type' => 'video', 'mime_type' => 'video/mp4']],
+    ]);
+    $reel = InboxConversation::factory()->create(['workspace_id' => $instagram->workspace_id, 'social_account_id' => $instagram->id, 'post_id' => $post->id]);
+    InboxMessage::factory()->for($reel, 'conversation')->create(['body' => 'Nice reel']);
+    RecountInboxConversation::execute($reel);
+    $card = "[data-testid=\"inbox-post-card-{$reel->id}\"]";
+
+    $page = visit(route('app.channels.inbox', $instagram));
+
+    waitForText($page, $card, 'Reel caption');
+    $page->assertVisible("{$card} [data-testid=\"inbox-post-card-video-frame\"]")
+        ->assertAttribute("{$card} [data-testid=\"inbox-post-card-video-frame\"]", 'src', 'https://cdn.example.test/reel.mp4#t=0.1')
+        ->assertNoJavaScriptErrors();
 });

@@ -34,7 +34,8 @@ const TAB_KINDS: Record<InboxTab, InboxConversationKind[]> = {
 /** Whether a change belongs to the tab and channels on screen. */
 const isOnScreen = (payload: InboxUpdatedPayload, filters: InboxFilters): boolean =>
     (!payload.kind || TAB_KINDS[filters.tab].includes(payload.kind))
-    && (!payload.channel_id || filters.channels.length === 0 || filters.channels.includes(payload.channel_id));
+    && (!payload.channel_id || ((!filters.channel || filters.channel === payload.channel_id)
+        && (filters.channels.length === 0 || filters.channels.includes(payload.channel_id))));
 
 const RELOAD_DELAY_MS = 1000;
 
