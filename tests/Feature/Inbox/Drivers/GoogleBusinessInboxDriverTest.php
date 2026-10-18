@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Inbox\ReplyToInboxMessage;
+use App\Actions\Inbox\UpsertInboxMessage;
 use App\Enums\Inbox\ConversationKind;
 use App\Enums\Inbox\MessageDirection;
 use App\Enums\Inbox\ReviewReplyState;
@@ -265,4 +266,21 @@ test('a failing recheck is reported with its access token redacted', function ()
 
     Exceptions::assertNotReported(fn (Throwable $exception): bool => str_contains($exception->getMessage(), 'secret-token'));
     expect(Exceptions::reported())->not->toBeEmpty();
+});
+
+test('a pending reply on an older review is decided by the review list, even when the review cannot be read alone', function () {
+    $reply = pendingGoogleReply($this->account, 'r1');
+    Http::fake([
+        "{$this->api}/{$this->location}/reviews/r1" => Http::response(['error' => ['code' => 404, 'status' => 'NOT_FOUND', 'message' => 'Requested entity was not found.']], 404),
+        "{$this->api}/{$this->location}/reviews*" => Http::response(['reviews' => [googleReview('r1', '2026-10-01T10:00:00Z', [
+            'comment' => 'Thank you', 'updateTime' => '2026-10-01T11:00:00Z', 'reviewReplyState' => 'APPROVED',
+        ])]]),
+    ]);
+
+    $result = app(GoogleBusinessInboxDriver::class)->poll($this->account, ConversationKind::Review, '2026-10-12T00:00:00Z', $this->since);
+    collect($result->messages)->each(fn ($message) => UpsertInboxMessage::execute($this->account, $message));
+
+    expect($reply->fresh()->review_reply_state)->toBe(ReviewReplyState::Approved)
+        ->and($reply->fresh()->removed_at)->toBeNull();
+    Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/reviews/r1'));
 });

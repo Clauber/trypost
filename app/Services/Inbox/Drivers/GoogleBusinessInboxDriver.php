@@ -62,7 +62,7 @@ class GoogleBusinessInboxDriver implements InboxDriver
         $stopAt = filled($cursor) ? CarbonImmutable::parse($cursor) : $since;
 
         $reviews = $this->withFreshToken($account, fn (): Collection => $this->reviews($account, $location['id'], $stopAt));
-        $reviews = $reviews->concat($this->withFreshToken($account, fn (): Collection => $this->pendingReviews($account, $reviews)));
+        $reviews = $reviews->concat($this->withFreshToken($account, fn (): Collection => $this->pendingReviews($account, $location['id'], $reviews)));
 
         $newest = $reviews
             ->map(fn (array $review): ?string => data_get($review, 'updateTime'))
@@ -138,16 +138,17 @@ class GoogleBusinessInboxDriver implements InboxDriver
     }
 
     /**
-     * Google's docs do not say whether a moderation decision moves the
-     * review's updateTime, so replies still pending are read one by one, the
-     * longest unchecked first. A review deleted on Google (NOT_FOUND) leaves
-     * the inbox, a review read back without its reply stops waiting for one,
-     * and no single review can fail the poll unless Google is limiting us.
+     * A moderation decision does not move the review's updateTime, so replies
+     * still pending are looked up on the review list, read in full (up to
+     * MAX_PAGES), the longest unchecked first. A review missing from it is read
+     * on its own; that read answers 404 even for reviews the list still has,
+     * so it removes nothing. No single review can fail the poll unless Google
+     * is limiting us.
      *
      * @param  Collection<int, array<string, mixed>>  $alreadyRead
      * @return Collection<int, array<string, mixed>>
      */
-    private function pendingReviews(SocialAccount $account, Collection $alreadyRead): Collection
+    private function pendingReviews(SocialAccount $account, string $location, Collection $alreadyRead): Collection
     {
         $read = $alreadyRead->pluck('name')->all();
 
@@ -161,10 +162,16 @@ class GoogleBusinessInboxDriver implements InboxDriver
             ->get(['id', 'platform_message_id'])
             ->reject(fn (InboxMessage $reply): bool => in_array($this->reviewName($reply), $read, true));
 
+        if ($pending->isEmpty()) {
+            return collect();
+        }
+
         InboxMessage::query()->whereKey($pending->modelKeys())->toBase()->update(['updated_at' => now()]);
 
+        $listed = $this->reviews($account, $location, CarbonImmutable::createFromTimestamp(0))->keyBy('name');
+
         return $pending
-            ->map(fn (InboxMessage $reply): ?array => $this->recheck($account, $reply))
+            ->map(fn (InboxMessage $reply): ?array => $listed->get($this->reviewName($reply)) ?? $this->recheck($account, $reply))
             ->filter()
             ->values();
     }
