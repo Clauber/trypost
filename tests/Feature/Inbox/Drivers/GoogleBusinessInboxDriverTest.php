@@ -167,7 +167,7 @@ function pendingGoogleReply(SocialAccount $account, string $id, ?string $updated
     return $reply;
 }
 
-test('a deleted review does not fail the poll and leaves the inbox', function () {
+test('a review Google answers 404 for does not fail the poll and stays in the inbox', function () {
     $gone = pendingGoogleReply($this->account, 'gone');
     pendingGoogleReply($this->account, 'r1');
     Http::fake([
@@ -181,8 +181,8 @@ test('a deleted review does not fail the poll and leaves the inbox', function ()
     $result = app(GoogleBusinessInboxDriver::class)->poll($this->account, ConversationKind::Review, '2026-10-12T00:00:00Z', $this->since);
 
     expect(collect($result->messages)->pluck('platformMessageId')->all())->toContain("{$this->location}/reviews/r1/reply")
-        ->and($gone->fresh()->removed_at)->not->toBeNull()
-        ->and(InboxMessage::query()->whereKey($gone->root_id)->value('removed_at'))->not->toBeNull();
+        ->and($gone->fresh()->removed_at)->toBeNull()
+        ->and(InboxMessage::query()->whereKey($gone->root_id)->value('removed_at'))->toBeNull();
 });
 
 test('a pending reply Google does not show yet stays pending, never removed', function () {
@@ -222,7 +222,7 @@ test('pending replies are rechecked oldest first so none waits forever', functio
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/reviews/newest'));
 });
 
-test('a 404 without a status still counts as a deleted review', function () {
+test('a 404 without a status removes nothing either', function () {
     $gone = pendingGoogleReply($this->account, 'gone');
     Http::fake([
         "{$this->api}/{$this->location}/reviews/gone" => Http::response('<html>Not found</html>', 404),
@@ -231,7 +231,7 @@ test('a 404 without a status still counts as a deleted review', function () {
 
     app(GoogleBusinessInboxDriver::class)->poll($this->account, ConversationKind::Review, '2026-10-12T00:00:00Z', $this->since);
 
-    expect($gone->fresh()->removed_at)->not->toBeNull();
+    expect($gone->fresh()->removed_at)->toBeNull();
 });
 
 test('a recheck that fails for another reason is reported and does not fail the poll', function () {

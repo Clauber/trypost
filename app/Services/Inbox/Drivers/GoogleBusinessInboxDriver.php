@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Inbox\Drivers;
 
-use App\Actions\Inbox\RemoveInboxMessages;
 use App\Dto\Inbox\IncomingMessage;
 use App\Dto\Inbox\IncomingSubject;
 use App\Dto\Inbox\PollResult;
@@ -178,8 +177,6 @@ class GoogleBusinessInboxDriver implements InboxDriver
         $response = $this->socialHttp()->withToken($account->access_token)->get("{$this->api()}/{$name}");
 
         if ($response->status() === HttpResponse::HTTP_NOT_FOUND) {
-            RemoveInboxMessages::execute($account, [$name]);
-
             return null;
         }
 
