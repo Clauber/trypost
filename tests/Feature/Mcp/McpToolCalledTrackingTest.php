@@ -136,7 +136,7 @@ test('a method that is not a string still gets the JSON-RPC error, not a server 
         'Authorization' => "Bearer {$this->mcpToken}",
         'Accept' => 'application/json, text/event-stream',
     ])->postJson(route('mcp.trypost'), ['jsonrpc' => '2.0', 'id' => 1, 'method' => $method])
-        ->assertOk()
+        ->assertBadRequest()
         ->assertJsonPath('error.code', -32600);
 
     Queue::assertNotPushed(TrackMcpToolCalled::class);
