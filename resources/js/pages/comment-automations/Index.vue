@@ -194,7 +194,17 @@ const runStatusClass = (status: CommentAutomationRun['status']): string =>
                     : $t('comment_automations.no_accounts')
             "
             data-testid="comment-automations-empty"
-        />
+        >
+            <template v-if="accounts.length > 0" #action>
+                <Button
+                    data-testid="comment-automations-empty-create"
+                    @click="openCreateDialog"
+                >
+                    <IconPlus class="size-4" />
+                    {{ $t('comment_automations.new') }}
+                </Button>
+            </template>
+        </EmptyState>
 
         <div v-else class="flex flex-col gap-10">
             <ul class="flex flex-col gap-2">
