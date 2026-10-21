@@ -18,6 +18,7 @@ return [
             'preferences' => '環境設定',
             'general' => '一般',
             'channels' => 'チャンネル',
+            'comment_automations' => '自動DM',
             'members' => 'メンバー',
             'signatures' => '署名',
             'labels' => 'ラベル',

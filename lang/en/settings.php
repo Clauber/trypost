@@ -18,6 +18,7 @@ return [
             'preferences' => 'Preferences',
             'general' => 'General',
             'channels' => 'Channels',
+            'comment_automations' => 'Auto DMs',
             'members' => 'Members',
             'signatures' => 'Signatures',
             'labels' => 'Labels',

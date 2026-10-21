@@ -94,6 +94,7 @@ return [
         'client_id' => env('INSTAGRAM_CLIENT_ID'),
         'client_secret' => env('INSTAGRAM_CLIENT_SECRET'),
         'redirect' => env('INSTAGRAM_CLIENT_REDIRECT'),
+        'webhook_verify_token' => env('INSTAGRAM_WEBHOOK_VERIFY_TOKEN'),
     ],
 
     // Threads
