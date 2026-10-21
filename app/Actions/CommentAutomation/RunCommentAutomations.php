@@ -9,10 +9,9 @@ use App\Enums\SocialAccount\Platform;
 use App\Models\CommentAutomation;
 use App\Models\SocialAccount;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Throwable;
 
 class RunCommentAutomations
 {
@@ -74,6 +73,7 @@ class RunCommentAutomations
 
         $baseUrl = $account->platform->instagramGraphBaseUrl();
 
+        // Any failure must resolve the run: a row left pending is never retried, the dedupe skips it.
         try {
             Http::withToken($account->access_token)
                 ->post("{$baseUrl}/{$instagramAccountId}/messages", [
@@ -81,16 +81,23 @@ class RunCommentAutomations
                     'message' => ['text' => $automation->reply_message],
                 ])
                 ->throw();
+        } catch (Throwable $e) {
+            $run->update(['status' => RunStatus::Failed, 'error' => Str::limit($e->getMessage(), 1000)]);
 
-            if (filled($automation->public_reply)) {
+            return;
+        }
+
+        $run->update(['status' => RunStatus::Sent]);
+
+        if (filled($automation->public_reply)) {
+            try {
                 Http::withToken($account->access_token)
                     ->post("{$baseUrl}/{$commentId}/replies", ['message' => $automation->public_reply])
                     ->throw();
+            } catch (Throwable $e) {
+                // The DM went out; keep the run Sent and note the public reply failure.
+                $run->update(['error' => Str::limit('Public reply failed: '.$e->getMessage(), 1000)]);
             }
-
-            $run->update(['status' => RunStatus::Sent]);
-        } catch (ConnectionException|RequestException $e) {
-            $run->update(['status' => RunStatus::Failed, 'error' => Str::limit($e->getMessage(), 1000)]);
         }
     }
 }
