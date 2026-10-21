@@ -60,8 +60,6 @@ RUN apk add --no-cache \
     && rm -rf /tmp/* /var/cache/apk/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-# GitHub rejects bursts of parallel unauthenticated dist downloads (TLS handshake failures) from some hosts.
-ENV COMPOSER_MAX_PARALLEL_HTTP=3
 
 WORKDIR /var/www/html
 
