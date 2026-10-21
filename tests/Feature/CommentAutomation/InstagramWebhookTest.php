@@ -154,3 +154,26 @@ test('a failed private reply is recorded and not retried', function () {
     expect($run->status)->toBe(RunStatus::Failed)
         ->and($run->error)->toContain('400');
 });
+
+test('the public reply is posted even when the private reply fails', function () {
+    $base = config('trypost.platforms.instagram.graph_api');
+    Http::fake([
+        "{$base}/1784/messages" => Http::response(['error' => ['message' => 'An unknown error has occurred.']], 500),
+        '*' => Http::response(['id' => 'r1']),
+    ]);
+
+    $account = SocialAccount::factory()->instagram()->create(['meta' => ['ig_user_id' => '1784']]);
+    CommentAutomation::factory()->for($account)->create([
+        'workspace_id' => $account->workspace_id,
+        'keyword' => 'guide',
+        'public_reply' => 'Check your DMs!',
+    ]);
+
+    (new HandleInstagramWebhook(instagramCommentPayload('1784')))->handle();
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === "{$base}/17890/replies");
+    $run = CommentAutomationRun::query()->sole();
+    expect($run->status)->toBe(RunStatus::Failed)
+        ->and($run->error)->toContain('500')
+        ->and($run->error)->not->toContain('Public reply failed');
+});
