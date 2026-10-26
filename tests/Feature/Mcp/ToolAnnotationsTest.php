@@ -62,6 +62,13 @@ function mcpExpectedToolAnnotations(): array
         'update-label-tool' => [false, true, false],
         'delete-label-tool' => [false, true, false],
 
+        // Comment automations
+        'list-comment-automations-tool' => [true, false, false],
+        'get-comment-automation-tool' => [true, false, false],
+        'create-comment-automation-tool' => [false, false, true],
+        'update-comment-automation-tool' => [false, true, true],
+        'delete-comment-automation-tool' => [false, true, false],
+
         // Ideas
         'list-ideas-tool' => [true, false, false],
         'get-idea-tool' => [true, false, false],
