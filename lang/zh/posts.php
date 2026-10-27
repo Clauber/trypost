@@ -954,6 +954,7 @@ return [
         'add_post_in_slot' => '添加帖子',
         'more_times' => '更多时间',
         'failure' => [
+            'tiktok_unconfirmed' => 'TikTok尚未确认此帖子是否已发布。再次发布前，请先查看你的TikTok个人主页。',
             'title' => '失败原因',
             'generic' => '无法发布此帖子。',
             'details' => '来自平台的消息',

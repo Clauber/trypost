@@ -43,6 +43,7 @@ use App\Support\Social\GoogleBusinessDerivativeCleaner;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Http\Client\Request;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Bus;
@@ -1399,6 +1400,7 @@ test('tiktok photo publish resumes after a status-fetch token expiry without a s
     Event::fake();
     Mail::fake();
     Storage::fake();
+    Sleep::fake();
 
     $account = SocialAccount::factory()->tiktok()->create([
         'workspace_id' => $this->workspace->id,
@@ -1466,6 +1468,100 @@ test('tiktok photo publish resumes after a status-fetch token expiry without a s
         ->and(Storage::allFiles('social-tiktok-photos'))->toBeEmpty()
         ->and(Http::recorded(fn ($request) => str_contains($request->url(), '/post/publish/content/init/')))
         ->toHaveCount(1);
+});
+
+test('a tiktok publish whose status TikTok refuses right after accepting it waits for the next check instead of failing', function () {
+    Event::fake();
+    Queue::fake();
+    $this->freezeSecond();
+    Sleep::fake(syncWithCarbon: true);
+    $acceptedAt = now();
+
+    $account = SocialAccount::factory()->tiktok()->create([
+        'workspace_id' => $this->workspace->id,
+        'username' => 'tiktoker',
+        'token_expires_at' => now()->addDay(),
+    ]);
+    $this->post->update([
+        'media' => [[
+            'id' => 'video',
+            'path' => 'media/2026-01/video.mp4',
+            'url' => 'https://example.com/media/2026-01/video.mp4',
+            'mime_type' => 'video/mp4',
+            'original_filename' => 'video.mp4',
+        ]],
+    ]);
+    $platform = publishJobRetarget($this->post, $account, [
+        'content_type' => ContentType::TikTokVideo,
+        'publish_status' => PlatformStatus::Pending,
+        'meta' => ['privacy_level' => PrivacyLevel::SelfOnly->value],
+    ]);
+
+    $api = config('trypost.platforms.tiktok.api');
+
+    Http::fake([
+        $api.'/post/publish/video/init/' => Http::response(['data' => ['publish_id' => 'pub_not_known_yet']]),
+        $api.'/post/publish/status/fetch/' => Http::response([
+            'error' => ['code' => 'invalid_params', 'message' => 'invalid_publish_id'],
+        ], 400),
+    ]);
+
+    (new PublishToSocialPlatform($platform))->handle();
+
+    $platform->refresh();
+
+    expect($platform->publish_status)->toBe(PlatformStatus::Retrying)
+        ->and($platform->status)->not->toBe(PostStatus::Failed)
+        ->and(data_get($platform->error_context, 'tiktok_publish_id'))->toBe('pub_not_known_yet')
+        ->and(data_get($platform->error_context, 'tiktok_init_at'))->not->toBeNull();
+
+    Mail::assertNothingQueued();
+    Mail::assertNothingSent();
+    Queue::assertPushed(PublishToSocialPlatform::class, fn (PublishToSocialPlatform $job): bool => $acceptedAt->addSeconds(30)->equalTo($job->delay));
+});
+
+test('a tiktok publish TikTok still refuses to report five minutes after accepting it fails without being sent again', function () {
+    Event::fake();
+    Queue::fake();
+    $this->freezeSecond();
+
+    $account = SocialAccount::factory()->tiktok()->create([
+        'workspace_id' => $this->workspace->id,
+        'username' => 'tiktoker',
+        'token_expires_at' => now()->addDay(),
+    ]);
+    $platform = publishJobRetarget($this->post, $account, [
+        'content_type' => ContentType::TikTokVideo,
+        'publish_status' => PlatformStatus::Retrying,
+        'meta' => ['privacy_level' => PrivacyLevel::SelfOnly->value],
+        'error_context' => [
+            'tiktok_publish_id' => 'pub_never_confirmed',
+            'tiktok_init_at' => now()->subMinutes(5)->toIso8601String(),
+        ],
+    ]);
+
+    $api = config('trypost.platforms.tiktok.api');
+
+    Http::fake([
+        $api.'/post/publish/status/fetch/' => Http::response([
+            'error' => ['code' => 'invalid_params', 'message' => 'invalid_publish_id'],
+        ], 400),
+    ]);
+
+    (new PublishToSocialPlatform($platform))->handle();
+
+    $platform->refresh();
+
+    expect($platform->publish_status)->toBe(PlatformStatus::Failed)
+        ->and(data_get($platform->error_context, 'reason'))->toBe('tiktok_unconfirmed')
+        ->and($platform->error_message)->toBe('invalid_publish_id')
+        ->and(json_decode(data_get($platform->error_context, 'raw_response'), true))->toBe([
+            'error' => ['code' => 'invalid_params', 'message' => 'invalid_publish_id'],
+        ])
+        ->and(data_get($platform->error_context, 'platform_error_code'))->toBe('invalid_params');
+
+    Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/init/'));
+    Queue::assertNotPushed(PublishToSocialPlatform::class);
 });
 
 test('pinterest media status 401 marks the account token expired and notifies to reconnect', function () {
@@ -2412,3 +2508,50 @@ test('a post on another network never asks TikTok for a video id', function () {
     expect($this->post->fresh()->publish_status)->toBe(PlatformStatus::Published);
     Queue::assertNotPushed(ResolveTikTokVideoId::class);
 });
+
+test('existing TikTok poll counters use the new ceiling without starting another publish', function (int $count, array $body, int $httpStatus, PlatformStatus $expected) {
+    Event::fake();
+    Queue::fake();
+    Exceptions::fake();
+    Sleep::fake();
+    $this->freezeSecond();
+
+    $account = SocialAccount::factory()->tiktok()->create([
+        'workspace_id' => $this->workspace->id,
+        'username' => 'tiktoker',
+        'token_expires_at' => now()->addDay(),
+    ]);
+    $post = publishJobRetarget($this->post, $account, [
+        'content_type' => ContentType::TikTokVideo,
+        'publish_status' => PlatformStatus::Retrying,
+        'meta' => ['privacy_level' => PrivacyLevel::SelfOnly->value],
+        'error_context' => [
+            'tiktok_publish_id' => 'pub_before_deployment',
+            'processing_retry_count' => $count,
+            'max_retries' => 120,
+            'retry_delay_seconds' => 30,
+        ],
+    ]);
+    $api = config('trypost.platforms.tiktok.api');
+    Http::fake([$api.'/post/publish/status/fetch/' => Http::response($body, $httpStatus)]);
+
+    (new PublishToSocialPlatform($post))->handle();
+
+    $post->refresh();
+    expect($post->publish_status)->toBe($expected);
+    Http::assertSentCount($httpStatus === 429 ? 3 : 1);
+    Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/init/'));
+    if ($expected !== PlatformStatus::Published) {
+        expect(data_get($post->error_context, 'tiktok_publish_id'))->toBe('pub_before_deployment')
+            ->and(data_get($post->error_context, 'processing_retry_count'))->toBe($count + 1)
+            ->and(data_get($post->error_context, 'max_retries'))->toBe(61);
+    }
+})->with([
+    '60 pending still retries' => [60, ['data' => ['status' => 'PROCESSING_UPLOAD']], 200, PlatformStatus::Retrying],
+    '61 pending fails resumably' => [61, ['data' => ['status' => 'PROCESSING_UPLOAD']], 200, PlatformStatus::Failed],
+    '119 pending fails resumably' => [119, ['data' => ['status' => 'PROCESSING_UPLOAD']], 200, PlatformStatus::Failed],
+    '61 rate limited fails resumably' => [61, ['error' => ['code' => 'rate_limit_exceeded']], 429, PlatformStatus::Failed],
+    '61 unavailable fails resumably' => [61, ['error' => ['code' => 'internal_error']], 500, PlatformStatus::Failed],
+    '61 refused poll fails resumably' => [61, ['error' => ['code' => 'invalid_params', 'message' => 'invalid_publish_id']], 400, PlatformStatus::Failed],
+    '119 complete succeeds' => [119, ['data' => ['status' => 'PUBLISH_COMPLETE']], 200, PlatformStatus::Published],
+]);

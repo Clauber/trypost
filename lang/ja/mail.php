@@ -105,6 +105,7 @@ return [
     ],
 
     'post_publish_failed' => [
+        'tiktok_unconfirmed' => 'TikTokでこの投稿の公開を確認できませんでした。再投稿する前に、TikTokのプロフィールを確認してください。',
         'subject' => ':workspace で投稿の公開に失敗しました',
         'title' => '投稿の公開に失敗しました',
         'preview' => '投稿の公開に失敗しました',

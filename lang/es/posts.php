@@ -955,6 +955,7 @@ return [
         'add_post_in_slot' => 'Añadir post',
         'more_times' => 'Más horarios',
         'failure' => [
+            'tiktok_unconfirmed' => 'TikTok no confirmó esta publicación. Revisa tu perfil de TikTok antes de volver a publicarla.',
             'title' => 'Por qué falló',
             'generic' => 'No pudimos publicar esta publicación.',
             'details' => 'Mensaje de la red',

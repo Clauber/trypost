@@ -105,6 +105,7 @@ return [
     ],
 
     'post_publish_failed' => [
+        'tiktok_unconfirmed' => 'TikTok did not confirm this post. Check your TikTok profile before publishing it again.',
         'subject' => 'Your post failed to publish in :workspace',
         'title' => 'Your post failed to publish',
         'preview' => 'Your post failed to publish',

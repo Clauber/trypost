@@ -105,6 +105,7 @@ return [
     ],
 
     'post_publish_failed' => [
+        'tiktok_unconfirmed' => 'TikTok heeft deze post niet bevestigd. Controleer je TikTok-profiel voordat je hem opnieuw publiceert.',
         'subject' => 'Je post in :workspace kon niet worden gepubliceerd',
         'title' => 'Je post kon niet worden gepubliceerd',
         'preview' => 'Je post kon niet worden gepubliceerd',

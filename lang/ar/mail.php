@@ -105,6 +105,7 @@ return [
     ],
 
     'post_publish_failed' => [
+        'tiktok_unconfirmed' => 'لم يؤكد TikTok نشر هذا المنشور. تحقق من ملفك الشخصي على TikTok قبل نشره مرة أخرى.',
         'subject' => 'فشل نشر منشورك في :workspace',
         'title' => 'فشل نشر منشورك',
         'preview' => 'فشل نشر منشورك',

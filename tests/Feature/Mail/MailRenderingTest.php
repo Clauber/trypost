@@ -10,6 +10,7 @@ use App\Enums\User\TimeFormat;
 use App\Mail\PostApprovalRequested;
 use App\Mail\PostApproved;
 use App\Mail\PostNoteAdded;
+use App\Mail\PostPublishFailed;
 use App\Mail\PostRejected;
 use App\Mail\WorkspaceConnectionsDisconnected;
 use App\Mail\WorkspaceInvite;
@@ -419,3 +420,20 @@ test('approval emails show one channel card and escape its name', function () {
         ->and($html)->toContain('Studio &lt;Team&gt;')
         ->not->toContain('Studio <Team>');
 });
+
+test('unconfirmed TikTok mail guidance renders in every recipient locale without replacing stored diagnostics', function (Locale $locale) {
+    $translation = data_get(require lang_path("{$locale->value}/posts.php"), 'publish.failure.tiktok_unconfirmed');
+    expect($translation)->toBeString()->not->toBeEmpty();
+    $account = SocialAccount::factory()->tiktok()->create();
+    $post = Post::factory()->forAccount($account)->failed()->create([
+        'error_message' => 'invalid_publish_id',
+        'error_context' => ['reason' => 'tiktok_unconfirmed', 'raw_response' => '{"error":{"message":"invalid_publish_id"}}'],
+    ]);
+
+    $html = (new PostPublishFailed($post))->locale($locale->value)->render();
+    $document = new Crawler($html);
+
+    expect($document->text())->toContain($translation)
+        ->and($post->fresh()->error_message)->toBe('invalid_publish_id')
+        ->and(data_get($post->fresh()->error_context, 'raw_response'))->toBe('{"error":{"message":"invalid_publish_id"}}');
+})->with(Locale::cases());

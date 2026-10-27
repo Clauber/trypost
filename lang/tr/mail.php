@@ -105,6 +105,7 @@ return [
     ],
 
     'post_publish_failed' => [
+        'tiktok_unconfirmed' => 'TikTok bu gönderiyi onaylamadı. Yeniden yayınlamadan önce TikTok profilini kontrol et.',
         'subject' => ':workspace çalışma alanında gönderin paylaşılamadı',
         'title' => 'Gönderin paylaşılamadı',
         'preview' => 'Gönderin paylaşılamadı',

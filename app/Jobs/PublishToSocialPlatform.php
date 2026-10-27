@@ -164,6 +164,7 @@ class PublishToSocialPlatform implements ShouldBeUnique, ShouldQueue
                 $this->markPlatformAsFailed($e->userMessage, $this->failureContext([
                     'category' => $e->category->value,
                     'platform_error_code' => $e->platformErrorCode,
+                    'reason' => data_get($e->context(), 'reason'),
                     'raw_response' => $e->context()['raw_response'],
                 ]));
                 break;
@@ -399,6 +400,7 @@ class PublishToSocialPlatform implements ShouldBeUnique, ShouldQueue
             ...Arr::except($previousContext, [
                 PublishCheckpoint::TIKTOK_PUBLISH_ID,
                 PublishCheckpoint::TIKTOK_STATUS,
+                PublishCheckpoint::TIKTOK_INIT_AT,
                 PublishCheckpoint::TIKTOK_DERIVATIVE_PATHS,
                 PublishCheckpoint::X_MEDIA,
             ]),

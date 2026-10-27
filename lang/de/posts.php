@@ -956,6 +956,7 @@ return [
         'add_post_in_slot' => 'Post hinzufügen',
         'more_times' => 'Weitere Zeiten',
         'failure' => [
+            'tiktok_unconfirmed' => 'TikTok hat diesen Beitrag nicht bestätigt. Prüfe dein TikTok-Profil, bevor du ihn erneut veröffentlichst.',
             'title' => 'Warum es fehlschlug',
             'generic' => 'Wir konnten diesen Beitrag nicht veröffentlichen.',
             'details' => 'Meldung des Netzwerks',

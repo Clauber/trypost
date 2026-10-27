@@ -105,6 +105,7 @@ return [
     ],
 
     'post_publish_failed' => [
+        'tiktok_unconfirmed' => 'TikTok에서 이 게시물의 게시를 확인하지 못했습니다. 다시 게시하기 전에 TikTok 프로필을 확인하세요.',
         'subject' => ':workspace에서 게시물 발행에 실패했습니다',
         'title' => '게시물 발행에 실패했습니다',
         'preview' => '게시물 발행에 실패했습니다',

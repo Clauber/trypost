@@ -25,6 +25,7 @@ class PostCardResource extends JsonResource
             ...$this->resource->toArray(),
             'failure' => $this->resource->error_context === null ? null : [
                 'category' => data_get($this->resource->error_context, 'category'),
+                'reason' => data_get($this->resource->error_context, 'reason'),
                 'failed_at' => data_get($this->resource->error_context, 'failed_at'),
             ],
         ];

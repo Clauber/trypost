@@ -954,6 +954,7 @@ return [
         'add_post_in_slot' => '投稿を追加',
         'more_times' => 'その他の時間',
         'failure' => [
+            'tiktok_unconfirmed' => 'TikTokでこの投稿の公開を確認できませんでした。再投稿する前に、TikTokのプロフィールを確認してください。',
             'title' => '失敗した理由',
             'generic' => 'この投稿を公開できませんでした。',
             'details' => 'SNSからのメッセージ',

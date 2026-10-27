@@ -956,6 +956,7 @@ return [
         'add_post_in_slot' => 'Gönderi ekle',
         'more_times' => 'Daha fazla saat',
         'failure' => [
+            'tiktok_unconfirmed' => 'TikTok bu gönderiyi onaylamadı. Yeniden yayınlamadan önce TikTok profilini kontrol et.',
             'title' => 'Neden başarısız oldu',
             'generic' => 'Bu gönderiyi yayınlayamadık.',
             'details' => 'Ağdan gelen mesaj',

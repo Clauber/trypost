@@ -161,3 +161,23 @@ test('each reply gets only its own media, and a changed reply media is posted ag
 
     expect($calls)->toBe([['two', ['media-1'], 'r'], ['three', [], 'id-two']]);
 });
+
+test('legacy Mastodon checkpoints still detect reply media edits', function () {
+    $image = ['id' => 'new-media', 'path' => 'medias/new.jpg', 'url' => 'https://cdn.test/new.jpg', 'type' => 'image', 'mime_type' => 'image/jpeg'];
+    $this->post->update(['meta' => ['thread_replies' => [
+        ['text' => '<p>Two <strong>bold</strong></p>', 'media' => [$image]],
+        ['text' => '<p>Three</p>', 'media' => []],
+    ]]]);
+    ThreadProgress::remember($this->post, [
+        ['hash' => ThreadProgress::hash('<p>Root</p>'), 'id' => 'root-id'],
+        ['hash' => ThreadProgress::hash('<p>Two <strong>bold</strong></p>', ['old-media']), 'id' => 'reply-id'],
+    ]);
+    $calls = [];
+    threadPublisher()->run($this->post->fresh(), fn (): array => ['id' => 'duplicate'], function (string $text, Collection $media, array $parent) use (&$calls): array {
+        $calls[] = [$text, $media->pluck('id')->all(), $parent['id']];
+
+        return ['id' => "id-{$text}"];
+    });
+
+    expect($calls)->toBe([['Two bold', ['new-media'], 'root-id'], ['Three', [], 'id-Two bold']]);
+});

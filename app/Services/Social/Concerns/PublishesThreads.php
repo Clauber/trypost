@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Social\Concerns;
 
 use App\Dto\MediaItem;
+use App\Enums\SocialAccount\Platform;
 use App\Models\Post;
 use App\Services\Social\ContentSanitizer;
 use App\Support\Social\ThreadProgress;
@@ -27,17 +28,31 @@ trait PublishesThreads
      */
     protected function publishThread(Post $post, string $rootHash, callable $postRoot, callable $postReply, ?callable $afterThread = null): array
     {
+        $rawReplies = ThreadReplies::supports($post->platform) ? ThreadReplies::of($post->meta) : [];
         $replies = array_map(
             fn (array $reply): array => [
                 'text' => app(ContentSanitizer::class)->sanitize($reply['text'], $post->platform),
                 'media' => ThreadReplies::mediaItems($reply),
             ],
-            ThreadReplies::supports($post->platform) ? ThreadReplies::of($post->meta) : [],
+            $rawReplies,
         );
         $hashes = [
             ThreadProgress::rootHash($post->error_context) ?? $rootHash,
             ...array_map(fn (array $reply): string => ThreadProgress::hash($reply['text'], $reply['media']->map(fn (MediaItem $item): string => $item->id)->all()), $replies),
         ];
+        if ($post->platform === Platform::Mastodon) {
+            foreach ($rawReplies as $index => $reply) {
+                $legacyHash = ThreadProgress::hash(
+                    app(ContentSanitizer::class)->legacyMastodonCheckpointText($reply['text']),
+                    $replies[$index]['media']->map(fn (MediaItem $item): string => $item->id)->all(),
+                );
+
+                if (data_get($post->error_context, ThreadProgress::KEY.'.'.($index + 1).'.hash') === $legacyHash) {
+                    $hashes[$index + 1] = $legacyHash;
+                }
+            }
+        }
+
         $posted = ThreadProgress::resumable($post->error_context, $hashes);
 
         if ($posted === []) {
