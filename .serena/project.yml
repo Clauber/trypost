@@ -1,0 +1,11 @@
+project_name: trypost
+language_servers:
+  - php
+  - typescript
+  - vue
+encoding: utf-8
+ignore_all_files_in_gitignore: true
+ignored_paths:
+  - .worktree/**
+  - .worktrees/**
+read_only: false
