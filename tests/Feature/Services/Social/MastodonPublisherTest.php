@@ -729,3 +729,30 @@ test('a mastodon thread with a reply over the limit fails before posting anythin
 
     Http::assertNothingSent();
 });
+
+test('mastodon resumes base-format reply checkpoints without reposting unchanged replies', function (string $reply, bool $edited) {
+    $this->post->update([
+        'content' => '<p>Root</p>',
+        'meta' => ['thread_replies' => [$reply, '<p>Three <strong>bold</strong></p>']],
+        'error_context' => [ThreadProgress::KEY => [
+            ['hash' => ThreadProgress::hash('<p>Root</p>'), 'id' => 'root-id', 'url' => 'https://mastodon.social/@testuser/root-id'],
+            ['hash' => ThreadProgress::hash('<p>Two <strong>bold</strong></p>'), 'id' => 'reply-id'],
+        ]],
+    ]);
+    Http::fake([
+        'https://mastodon.social/api/v1/statuses' => Http::sequence()
+            ->push(['id' => 'next-id', 'url' => 'https://mastodon.social/@testuser/next-id'])
+            ->push(['id' => 'last-id', 'url' => 'https://mastodon.social/@testuser/last-id']),
+    ]);
+
+    $result = $this->publisher->publish($this->post->fresh());
+
+    expect($result['id'])->toBe('root-id')
+        ->and($result['thread_reply_ids'])->toBe($edited ? ['next-id', 'last-id'] : ['reply-id', 'next-id']);
+    Http::assertSentCount($edited ? 2 : 1);
+    Http::assertSent(fn ($request): bool => $request['status'] === 'Three bold'
+        && $request['in_reply_to_id'] === ($edited ? 'next-id' : 'reply-id'));
+})->with([
+    'unchanged legacy reply' => ['<p>Two <strong>bold</strong></p>', false],
+    'actual edit' => ['<p>Two <strong>changed</strong></p>', true],
+]);

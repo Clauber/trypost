@@ -683,3 +683,29 @@ test('a publishing post sits in its own queue group and moves to sent once it se
     $page->assertVisible("@post-card-{$publishing->id}")
         ->assertNoJavaScriptErrors();
 });
+
+test('unconfirmed TikTok guidance follows the viewer locale and keeps provider diagnostics separate', function (string $locale, string $guidance) {
+    [$user, $workspace] = publishQueueSetup();
+    $user->update(['locale' => $locale]);
+    $channel = SocialAccount::factory()->tiktok()->create(['workspace_id' => $workspace->id]);
+    $failed = Post::factory()->forAccount($channel)->failed()->create([
+        'user_id' => $user->id,
+        'error_message' => 'invalid_publish_id',
+        'error_context' => ['category' => 'unknown', 'reason' => 'tiktok_unconfirmed'],
+    ]);
+    $this->actingAs($user);
+
+    $page = visit(route('app.posts.index', ['tab' => 'sent']));
+    waitForPublishQueueTestId($page, "post-status-{$failed->id}");
+    $page->click("@post-status-{$failed->id}");
+    waitForPublishQueueTestId($page, "post-failure-{$failed->id}");
+
+    $page->assertSeeIn("@post-failure-reason-{$failed->id}", $guidance)
+        ->assertSeeIn("@post-failure-details-{$failed->id}", 'invalid_publish_id')
+        ->assertNoJavaScriptErrors();
+    $page->screenshot(filename: "tiktok-unconfirmed-{$locale}");
+})->with([
+    'English' => ['en', 'TikTok did not confirm this post. Check your TikTok profile before publishing it again.'],
+    'French' => ['fr', "TikTok n'a pas confirmé cette publication. Vérifiez votre profil TikTok avant de la publier à nouveau."],
+    'Portuguese' => ['pt-BR', 'O TikTok não confirmou esta publicação. Confira seu perfil no TikTok antes de publicá-la novamente.'],
+]);

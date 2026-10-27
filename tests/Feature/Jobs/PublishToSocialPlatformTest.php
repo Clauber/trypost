@@ -1553,7 +1553,11 @@ test('a tiktok publish TikTok still refuses to report five minutes after accepti
     $platform->refresh();
 
     expect($platform->publish_status)->toBe(PlatformStatus::Failed)
-        ->and($platform->error_message)->toBe('TikTok did not confirm this post. Check your TikTok profile before publishing it again.')
+        ->and(data_get($platform->error_context, 'reason'))->toBe('tiktok_unconfirmed')
+        ->and($platform->error_message)->toBe('invalid_publish_id')
+        ->and(json_decode(data_get($platform->error_context, 'raw_response'), true))->toBe([
+            'error' => ['code' => 'invalid_params', 'message' => 'invalid_publish_id'],
+        ])
         ->and(data_get($platform->error_context, 'platform_error_code'))->toBe('invalid_params');
 
     Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/init/'));
