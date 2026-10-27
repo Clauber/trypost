@@ -9,6 +9,11 @@
     </p>
 
     <x-post-preview />
+    @if(($publication['reason'] ?? null) === 'tiktok_unconfirmed')
+      <p class="m-0 leading-6">
+        @{{ __('mail.post_publish_failed.tiktok_unconfirmed') }}
+      </p>
+    @endif
     @if($publication['error'])
       <x-alert title-key="mail.post_preview.error">
         @{{ $publication['error'] }}

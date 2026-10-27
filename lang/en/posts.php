@@ -954,6 +954,7 @@ return [
         'add_post_in_slot' => 'Add a post',
         'more_times' => 'More times',
         'failure' => [
+            'tiktok_unconfirmed' => 'TikTok did not confirm this post. Check your TikTok profile before publishing it again.',
             'title' => 'Why it failed',
             'generic' => 'We couldn\'t publish this post.',
             'details' => 'Message from the network',

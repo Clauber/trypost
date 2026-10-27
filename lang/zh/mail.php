@@ -105,6 +105,7 @@ return [
     ],
 
     'post_publish_failed' => [
+        'tiktok_unconfirmed' => 'TikTok尚未确认此帖子是否已发布。再次发布前，请先查看你的TikTok个人主页。',
         'subject' => ':workspace 中的内容发布失败',
         'title' => '内容发布失败',
         'preview' => '内容发布失败',

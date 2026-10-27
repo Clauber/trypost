@@ -954,6 +954,7 @@ return [
         'add_post_in_slot' => '게시물 추가',
         'more_times' => '더 많은 시간',
         'failure' => [
+            'tiktok_unconfirmed' => 'TikTok에서 이 게시물의 게시를 확인하지 못했습니다. 다시 게시하기 전에 TikTok 프로필을 확인하세요.',
             'title' => '실패한 이유',
             'generic' => '이 게시물을 게시하지 못했습니다.',
             'details' => '네트워크 메시지',

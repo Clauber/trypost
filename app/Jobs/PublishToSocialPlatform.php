@@ -164,6 +164,7 @@ class PublishToSocialPlatform implements ShouldBeUnique, ShouldQueue
                 $this->markPlatformAsFailed($e->userMessage, $this->failureContext([
                     'category' => $e->category->value,
                     'platform_error_code' => $e->platformErrorCode,
+                    'reason' => data_get($e->context(), 'reason'),
                     'raw_response' => $e->context()['raw_response'],
                 ]));
                 break;

@@ -708,4 +708,5 @@ test('unconfirmed TikTok guidance follows the viewer locale and keeps provider d
     'English' => ['en', 'TikTok did not confirm this post. Check your TikTok profile before publishing it again.'],
     'French' => ['fr', "TikTok n'a pas confirmé cette publication. Vérifiez votre profil TikTok avant de la publier à nouveau."],
     'Portuguese' => ['pt-BR', 'O TikTok não confirmou esta publicação. Confira seu perfil no TikTok antes de publicá-la novamente.'],
+    'Russian' => ['ru', 'TikTok не подтвердил публикацию этого поста. Проверьте свой профиль в TikTok, прежде чем публиковать его повторно.'],
 ]);

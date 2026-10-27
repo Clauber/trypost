@@ -105,6 +105,7 @@ return [
     ],
 
     'post_publish_failed' => [
+        'tiktok_unconfirmed' => 'TikTok hat diesen Beitrag nicht bestätigt. Prüfe dein TikTok-Profil, bevor du ihn erneut veröffentlichst.',
         'subject' => 'Dein Beitrag in :workspace konnte nicht veröffentlicht werden',
         'title' => 'Dein Beitrag konnte nicht veröffentlicht werden',
         'preview' => 'Dein Beitrag konnte nicht veröffentlicht werden',

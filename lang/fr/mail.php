@@ -105,6 +105,7 @@ return [
     ],
 
     'post_publish_failed' => [
+        'tiktok_unconfirmed' => 'TikTok n\'a pas confirmé cette publication. Vérifiez votre profil TikTok avant de la publier à nouveau.',
         'subject' => 'Votre publication a échoué dans :workspace',
         'title' => 'Votre publication a échoué',
         'preview' => 'Votre publication a échoué',

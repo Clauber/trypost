@@ -77,6 +77,18 @@ class ContentSanitizer
     }
 
     /**
+     * Only for comparing checkpoints written before Mastodon switched to plaintext.
+     */
+    public function legacyMastodonCheckpointText(string $content): string
+    {
+        return trim(html_entity_decode(
+            strip_tags($this->escapeTypedBrackets($content), ['p', 'strong', 'em', 'b', 'i', 'a', 'br', 'span']),
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8',
+        ));
+    }
+
+    /**
      * The composer stores plain text, so a `<` that does not open a tag is
      * something the person typed (`I <3 TryPost`, `price < 10`). It becomes
      * `&lt;`, or stripping tags would drop everything after it. Tags, from the

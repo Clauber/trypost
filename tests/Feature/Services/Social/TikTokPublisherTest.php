@@ -576,7 +576,8 @@ test('tiktok publisher fails a publish TikTok still refuses to report five minut
 
     expect(fn () => $this->publisher->publish($this->post->fresh()))
         ->toThrow(function (TikTokPublishException $exception): void {
-            expect($exception->userMessage)->toBe('TikTok did not confirm this post. Check your TikTok profile before publishing it again.')
+            expect(data_get($exception->context(), 'reason'))->toBe('tiktok_unconfirmed')
+                ->and($exception->userMessage)->toBe('invalid_publish_id')
                 ->and($exception->platformErrorCode)->toBe('invalid_params');
         });
 

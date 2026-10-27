@@ -54,6 +54,7 @@ export type PostCardMetrics = PublicationAnalyticsDetail | UnavailablePostMetric
 
 export interface PostCardFailure {
     category?: string | null;
+    reason?: 'tiktok_unconfirmed' | null;
     failed_at?: string | null;
 }
 

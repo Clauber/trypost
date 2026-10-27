@@ -954,6 +954,7 @@ return [
         'add_post_in_slot' => 'Post toevoegen',
         'more_times' => 'Meer tijden',
         'failure' => [
+            'tiktok_unconfirmed' => 'TikTok heeft deze post niet bevestigd. Controleer je TikTok-profiel voordat je hem opnieuw publiceert.',
             'title' => 'Waarom het mislukte',
             'generic' => 'We konden deze post niet publiceren.',
             'details' => 'Bericht van het netwerk',

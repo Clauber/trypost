@@ -954,6 +954,7 @@ return [
         'add_post_in_slot' => 'إضافة منشور',
         'more_times' => 'المزيد من الأوقات',
         'failure' => [
+            'tiktok_unconfirmed' => 'لم يؤكد TikTok نشر هذا المنشور. تحقق من ملفك الشخصي على TikTok قبل نشره مرة أخرى.',
             'title' => 'سبب الفشل',
             'generic' => 'تعذّر نشر هذا المنشور.',
             'details' => 'رسالة من الشبكة',

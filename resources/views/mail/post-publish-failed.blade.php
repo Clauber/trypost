@@ -99,6 +99,11 @@ $direction = Locale::tryFrom(app()->getLocale())?->direction() ?? 'ltr';
                     </td>
                   </tr>
                 </table>
+                @if(($publication['reason'] ?? null) === 'tiktok_unconfirmed')
+                <p style="margin: 0; line-height: 24px">
+                  {{ __('mail.post_publish_failed.tiktok_unconfirmed') }}
+                </p>
+                @endif
                 @if($publication['error'])<table role="presentation" style="margin-top: 16px; width: 100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td class="sm-p-4" style="border-radius: 12px; border: 1px solid #eae8e5; background-color: #f7f6f3; padding: 20px">

@@ -52,9 +52,12 @@ const failure = computed(() => {
     return {
         platform: post.platform,
         account: post.social_account?.display_label ?? null,
-        reasonKey: CATEGORIES.includes(category)
-            ? `posts.publish.failure.categories.${category}`
-            : 'posts.publish.failure.generic',
+        reasonKey:
+            post.failure?.reason === 'tiktok_unconfirmed'
+                ? 'posts.publish.failure.tiktok_unconfirmed'
+                : CATEGORIES.includes(category)
+                  ? `posts.publish.failure.categories.${category}`
+                  : 'posts.publish.failure.generic',
         details: post.error_message?.trim() || null,
         at: at ? date.formatDateTimeInTimezone(at, props.timezone) : null,
     };

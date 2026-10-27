@@ -9,6 +9,8 @@ use Illuminate\Http\Client\Response;
 
 class TikTokPublishException extends SocialPublishException
 {
+    private bool $publicationUnconfirmed = false;
+
     /**
      * Error codes TikTok documents as caused by the creator's grants, file or
      * account limits. rate_limit_exceeded is per user access_token. App
@@ -96,12 +98,23 @@ class TikTokPublishException extends SocialPublishException
      */
     public static function unconfirmed(self $refusal): static
     {
-        return new static(
-            userMessage: 'TikTok did not confirm this post. Check your TikTok profile before publishing it again.',
+        $exception = new static(
+            userMessage: $refusal->userMessage,
             category: ErrorCategory::Unknown,
             platformErrorCode: $refusal->platformErrorCode,
             rawResponse: $refusal->rawResponse,
         );
+        $exception->publicationUnconfirmed = true;
+
+        return $exception;
+    }
+
+    public function context(): array
+    {
+        return [
+            ...parent::context(),
+            ...($this->publicationUnconfirmed ? ['reason' => 'tiktok_unconfirmed'] : []),
+        ];
     }
 
     public static function fromFailReason(string $failReason, ?string $rawResponse = null): static

@@ -2508,3 +2508,50 @@ test('a post on another network never asks TikTok for a video id', function () {
     expect($this->post->fresh()->publish_status)->toBe(PlatformStatus::Published);
     Queue::assertNotPushed(ResolveTikTokVideoId::class);
 });
+
+test('existing TikTok poll counters use the new ceiling without starting another publish', function (int $count, array $body, int $httpStatus, PlatformStatus $expected) {
+    Event::fake();
+    Queue::fake();
+    Exceptions::fake();
+    Sleep::fake();
+    $this->freezeSecond();
+
+    $account = SocialAccount::factory()->tiktok()->create([
+        'workspace_id' => $this->workspace->id,
+        'username' => 'tiktoker',
+        'token_expires_at' => now()->addDay(),
+    ]);
+    $post = publishJobRetarget($this->post, $account, [
+        'content_type' => ContentType::TikTokVideo,
+        'publish_status' => PlatformStatus::Retrying,
+        'meta' => ['privacy_level' => PrivacyLevel::SelfOnly->value],
+        'error_context' => [
+            'tiktok_publish_id' => 'pub_before_deployment',
+            'processing_retry_count' => $count,
+            'max_retries' => 120,
+            'retry_delay_seconds' => 30,
+        ],
+    ]);
+    $api = config('trypost.platforms.tiktok.api');
+    Http::fake([$api.'/post/publish/status/fetch/' => Http::response($body, $httpStatus)]);
+
+    (new PublishToSocialPlatform($post))->handle();
+
+    $post->refresh();
+    expect($post->publish_status)->toBe($expected);
+    Http::assertSentCount($httpStatus === 429 ? 3 : 1);
+    Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/init/'));
+    if ($expected !== PlatformStatus::Published) {
+        expect(data_get($post->error_context, 'tiktok_publish_id'))->toBe('pub_before_deployment')
+            ->and(data_get($post->error_context, 'processing_retry_count'))->toBe($count + 1)
+            ->and(data_get($post->error_context, 'max_retries'))->toBe(61);
+    }
+})->with([
+    '60 pending still retries' => [60, ['data' => ['status' => 'PROCESSING_UPLOAD']], 200, PlatformStatus::Retrying],
+    '61 pending fails resumably' => [61, ['data' => ['status' => 'PROCESSING_UPLOAD']], 200, PlatformStatus::Failed],
+    '119 pending fails resumably' => [119, ['data' => ['status' => 'PROCESSING_UPLOAD']], 200, PlatformStatus::Failed],
+    '61 rate limited fails resumably' => [61, ['error' => ['code' => 'rate_limit_exceeded']], 429, PlatformStatus::Failed],
+    '61 unavailable fails resumably' => [61, ['error' => ['code' => 'internal_error']], 500, PlatformStatus::Failed],
+    '61 refused poll fails resumably' => [61, ['error' => ['code' => 'invalid_params', 'message' => 'invalid_publish_id']], 400, PlatformStatus::Failed],
+    '119 complete succeeds' => [119, ['data' => ['status' => 'PUBLISH_COMPLETE']], 200, PlatformStatus::Published],
+]);
