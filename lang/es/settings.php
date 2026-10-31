@@ -18,6 +18,7 @@ return [
             'preferences' => 'Preferencias',
             'general' => 'General',
             'channels' => 'Canales',
+            'comment_automations' => 'MD automáticos',
             'members' => 'Miembros',
             'signatures' => 'Firmas',
             'labels' => 'Etiquetas',

@@ -18,6 +18,7 @@ return [
             'preferences' => 'التفضيلات',
             'general' => 'عام',
             'channels' => 'القنوات',
+            'comment_automations' => 'رسائل تلقائية',
             'members' => 'الأعضاء',
             'signatures' => 'التوقيعات',
             'labels' => 'التسميات',

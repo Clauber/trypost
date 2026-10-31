@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Auth;
 
 use App\Enums\SocialAccount\Platform as SocialPlatform;
+use App\Models\SocialAccount;
 use App\Support\Social\PendingConnection;
 use Exception;
+use Illuminate\Http\Client\Response as HttpResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
@@ -24,6 +27,8 @@ class InstagramController extends SocialController
         'instagram_business_basic',
         'instagram_business_content_publish',
         'instagram_business_manage_insights',
+        'instagram_business_manage_comments',
+        'instagram_business_manage_messages',
     ];
 
     public function connect(Request $request): Response
@@ -82,6 +87,30 @@ class InstagramController extends SocialController
             ]);
 
             return $this->failConnection('error_connecting');
+        }
+    }
+
+    /**
+     * Subscribes the account to comment webhooks so comment automations can
+     * reply. A failure only disables those automations, so it never stops the
+     * connection.
+     */
+    protected function afterConnected(SocialAccount $account): void
+    {
+        $accountId = $account->instagramAccountId() ?? $account->platform_user_id;
+
+        $response = rescue(
+            fn (): HttpResponse => Http::withToken($account->access_token)
+                ->post("{$this->graphApi()}/{$accountId}/subscribed_apps?subscribed_fields=comments"),
+            report: false,
+        );
+
+        if (! $response?->successful()) {
+            Log::warning('Instagram webhook subscription failed', [
+                'social_account_id' => $account->id,
+                'status' => $response?->status(),
+                'body' => $response?->body(),
+            ]);
         }
     }
 }

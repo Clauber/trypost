@@ -18,6 +18,7 @@ return [
             'preferences' => 'Προτιμήσεις',
             'general' => 'Γενικά',
             'channels' => 'Κανάλια',
+            'comment_automations' => 'Αυτόματα DM',
             'members' => 'Μέλη',
             'signatures' => 'Υπογραφές',
             'labels' => 'Ετικέτες',

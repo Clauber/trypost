@@ -18,6 +18,7 @@ return [
             'preferences' => 'Voorkeuren',
             'general' => 'Algemeen',
             'channels' => 'Kanalen',
+            'comment_automations' => 'Auto-DM\'s',
             'members' => 'Leden',
             'signatures' => 'Handtekeningen',
             'labels' => 'Labels',

@@ -40,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->preventRequestForgery(except: [
             'stripe/*',
             'telegram/webhook',
+            'webhooks/instagram',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

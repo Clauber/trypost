@@ -11,6 +11,7 @@ use App\Http\Controllers\App\ChangelogEntryViewController;
 use App\Http\Controllers\App\ChannelController;
 use App\Http\Controllers\App\ChannelPostingScheduleController;
 use App\Http\Controllers\App\ChannelQueueController;
+use App\Http\Controllers\App\CommentAutomationController;
 use App\Http\Controllers\App\ComposerAccountDataController;
 use App\Http\Controllers\App\ComposerLiveDataController;
 use App\Http\Controllers\App\DiscordController as AppDiscordController;
@@ -400,6 +401,11 @@ Route::middleware(['auth', EnsureAccountReady::class, EnsureHasWorkspace::class]
     Route::post('repurposes/{repurpose}/resume', [RepurposeController::class, 'resume'])->name('app.repurposes.resume');
     Route::post('repurposes/{repurpose}/disable', [RepurposeController::class, 'disable'])->name('app.repurposes.disable');
     Route::delete('repurposes/{repurpose}', [RepurposeController::class, 'destroy'])->name('app.repurposes.destroy');
+
+    Route::get('settings/workspace/comment-automations', [CommentAutomationController::class, 'index'])->name('app.comment-automations.index');
+    Route::post('settings/workspace/comment-automations', [CommentAutomationController::class, 'store'])->name('app.comment-automations.store');
+    Route::put('settings/workspace/comment-automations/{commentAutomation}', [CommentAutomationController::class, 'update'])->name('app.comment-automations.update');
+    Route::delete('settings/workspace/comment-automations/{commentAutomation}', [CommentAutomationController::class, 'destroy'])->name('app.comment-automations.destroy');
 
     Route::get('settings/workspace/webhooks', [WebhookController::class, 'index'])->name('app.webhooks.index');
     Route::post('settings/workspace/webhooks', [WebhookController::class, 'store'])->name('app.webhooks.store');
