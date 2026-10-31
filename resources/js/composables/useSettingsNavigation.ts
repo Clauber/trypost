@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/vue3';
 import {
     IconLayoutGrid,
+    IconMessageCircle,
     IconBell,
     IconCoin,
     IconCode,
@@ -20,6 +21,7 @@ import { useWorkspaceAbilities } from '@/composables/useWorkspaceAbilities';
 import { members } from '@/routes/app';
 import { index as apiKeys } from '@/routes/app/api-keys';
 import { index as billing } from '@/routes/app/billing';
+import { index as commentAutomations } from '@/routes/app/comment-automations';
 import { index as labels } from '@/routes/app/labels';
 import { index as mcp } from '@/routes/app/mcp';
 import { preferences as notificationPreferences } from '@/routes/app/notifications';
@@ -111,6 +113,12 @@ export const useSettingsNavigation = () => {
                         IconLayoutGrid,
                         workspace && canManageAccounts.value,
                         channelCount.value,
+                    ),
+                    ...item(
+                        'comment_automations',
+                        commentAutomations.url(),
+                        IconMessageCircle,
+                        workspace && canManageAccounts.value,
                     ),
                     ...item(
                         'members',

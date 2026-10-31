@@ -18,6 +18,7 @@ return [
             'preferences' => '偏好设置',
             'general' => '常规',
             'channels' => '频道',
+            'comment_automations' => '自动私信',
             'members' => '成员',
             'signatures' => '签名',
             'labels' => '标签',

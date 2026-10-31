@@ -20,6 +20,7 @@ return [
             'preferences' => 'Präferenzen',
             'general' => 'Allgemein',
             'channels' => 'Kanäle',
+            'comment_automations' => 'Auto-DMs',
             'members' => 'Mitglieder',
             'signatures' => 'Signaturen',
             'labels' => 'Labels',

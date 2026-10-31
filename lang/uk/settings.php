@@ -18,6 +18,7 @@ return [
             'preferences' => 'Уподобання',
             'general' => 'Загальні',
             'channels' => 'Канали',
+            'comment_automations' => 'Автовідповіді',
             'members' => 'Учасники',
             'signatures' => 'Підписи',
             'labels' => 'Мітки',

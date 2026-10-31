@@ -11,7 +11,9 @@ use App\Models\SocialAccount;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Support\Social\PendingConnection;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
@@ -353,6 +355,30 @@ test('instagram callback stores the professional account id', function () {
 
     expect(SocialAccount::where('platform_user_id', 'app-scoped-1')->sole()->meta)
         ->toEqual(['account_type' => 'BUSINESS', 'ig_user_id' => '17841400000000001']);
+});
+
+test('a finished instagram connection subscribes the professional account to comment webhooks', function () {
+    Http::fake(['*' => Http::response(['success' => true])]);
+    startSocialConnect($this->workspace->id, Platform::Instagram);
+
+    $socialiteUser = Mockery::mock(SocialiteUser::class);
+    $socialiteUser->shouldReceive('getId')->andReturn('app-scoped-1');
+    $socialiteUser->shouldReceive('getNickname')->andReturn('testuser');
+    $socialiteUser->shouldReceive('getName')->andReturn('Test User');
+    $socialiteUser->shouldReceive('getAvatar')->andReturn(null);
+    $socialiteUser->token = 'test-access-token';
+    $socialiteUser->refreshToken = null;
+    $socialiteUser->expiresIn = 5184000;
+    $socialiteUser->user = ['account_type' => 'BUSINESS', 'user_id' => 17841400000000001];
+
+    Socialite::shouldReceive('driver')->with('instagram')->andReturn(Mockery::mock(['user' => $socialiteUser]));
+
+    $this->actingAs($this->user)->get(route('app.social.instagram.callback'));
+    finishSocialConnect(Platform::Instagram)->assertRedirect();
+
+    Http::assertSent(fn (Request $request): bool => $request->method() === 'POST'
+        && $request->url() === config('trypost.platforms.instagram.graph_api').'/17841400000000001/subscribed_apps?subscribed_fields=comments'
+        && $request->hasHeader('Authorization', 'Bearer test-access-token'));
 });
 
 test('instagram callback moves a card connected through facebook back to instagram login', function () {

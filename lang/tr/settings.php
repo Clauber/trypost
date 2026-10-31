@@ -20,6 +20,7 @@ return [
             'preferences' => 'Tercihler',
             'general' => 'Genel',
             'channels' => 'Kanallar',
+            'comment_automations' => 'Otomatik DM',
             'members' => 'Üyeler',
             'signatures' => 'İmzalar',
             'labels' => 'Etiketler',
